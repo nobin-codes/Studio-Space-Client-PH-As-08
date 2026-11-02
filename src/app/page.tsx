@@ -1,69 +1,854 @@
-import Image from "next/image";
+
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import {
+  Swiper,
+  SwiperSlide,
+} from "swiper/react";
+import { Autoplay, EffectFade, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/effect-fade";
+import "swiper/css/pagination";
+
+type Studio = {
+  _id: string;
+  title: string;
+  category: string;
+  hourlyRate: number;
+  location: string;
+  imageUrl?: string;
+  image?: string;
+  rating?: number;
+};
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+const slides = [
+  {
+    eyebrow: "THE SPACE BEHIND THE STORY",
+    title: "Make room for\nsomething creative.",
+    description:
+      "Discover inspiring studios, professional equipment, and spaces built for your next big idea.",
+    image:
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=2200&q=90",
+  },
+  {
+    eyebrow: "YOUR NEXT CREATIVE HOME",
+    title: "Find your perfect\ncreative space.",
+    description:
+      "From photography studios to recording rooms, find the right environment to bring your vision to life.",
+    image:
+      "https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?auto=format&fit=crop&w=2200&q=90",
+  },
+  {
+    eyebrow: "CREATE. CONNECT. GROW.",
+    title: "Great ideas need\ngreat spaces.",
+    description:
+      "Share your space with creators, reach new people, and turn your studio into an opportunity.",
+    image:
+      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=2200&q=90",
+  },
+];
+
+const categories = [
+  {
+    name: "Photo Studios",
+    description: "Perfect light. Perfect frame.",
+    image:
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85",
+    icon: "◉",
+    query: "Photo Studios",
+  },
+  {
+    name: "Sound Stages",
+    description: "Bring every scene to life.",
+    image:
+      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=85",
+    icon: "▣",
+    query: "Sound Stages",
+  },
+  {
+    name: "Podcast Rooms",
+    description: "Give your voice a space.",
+    image:
+      "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=900&q=85",
+    icon: "◖",
+    query: "Podcast Rooms",
+  },
+  {
+    name: "Music Suites",
+    description: "Where sound becomes art.",
+    image:
+      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=900&q=85",
+    icon: "♫",
+    query: "Music Suites",
+  },
+  {
+    name: "Art Workshops",
+    description: "Make something extraordinary.",
+    image:
+      "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=900&q=85",
+    icon: "✳",
+    query: "Art Workshops",
+  },
+];
+
+const steps = [
+  {
+    number: "01",
+    title: "Discover spaces",
+    description:
+      "Explore creative spaces that match your vision, location, and budget.",
+    icon: "⌕",
+  },
+  {
+    number: "02",
+    title: "Select your hours",
+    description:
+      "Choose a date and the time that works best for your production.",
+    icon: "◷",
+  },
+  {
+    number: "03",
+    title: "Book your space",
+    description:
+      "Send your booking request and manage your reservation in one place.",
+    icon: "↗",
+  },
+  {
+    number: "04",
+    title: "Create & produce",
+    description:
+      "Show up, get inspired, and bring your creative vision to life.",
+    icon: "✳",
+  },
+];
+
+const assurances = [
+  {
+    title: "Verified profiles",
+    description:
+      "Connect with hosts and creators through transparent profile information.",
+    icon: "✓",
+  },
+  {
+    title: "Equipment safety",
+    description:
+      "Review studio details and amenities before choosing your workspace.",
+    icon: "◇",
+  },
+  {
+    title: "Host protection",
+    description:
+      "Clear booking information helps hosts and creators stay informed.",
+    icon: "⌂",
+  },
+  {
+    title: "Creator support",
+    description:
+      "A platform designed to make discovering and booking spaces easier.",
+    icon: "♡",
+  },
+];
+
+function ArrowIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 12h14M13 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ApertureIcon() {
+  return (
+    <svg
+      width="27"
+      height="27"
+      viewBox="0 0 32 32"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="16" cy="16" r="13.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="m16 2.5 5.5 10.1M29.5 16H18M22.7 27.7l-5.4-10.2M2.5 16h11.8M9.3 4.3l5.4 10.2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <circle cx="16" cy="16" r="3.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function StudioCard({ studio }: { studio: Studio }) {
+  const image = studio.imageUrl || studio.image;
+
+  return (
+    <article className="studio-card group">
+      <Link
+        href={`/studios/${studio._id}`}
+        className="studio-card-image"
+        aria-label={`View ${studio.title}`}
+      >
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt={studio.title} />
+        ) : (
+          <div className="studio-image-fallback">
+            <ApertureIcon />
+          </div>
+        )}
+
+        <span className="studio-category">{studio.category}</span>
+
+        <span className="studio-image-arrow">
+          <ArrowIcon />
+        </span>
+      </Link>
+
+      <div className="studio-card-content">
+        <div className="studio-location">
+          <span>⌖</span>
+          {studio.location}
+        </div>
+
+        <h3>{studio.title}</h3>
+
+        <div className="studio-card-bottom">
+          <p className="studio-price">
+            ${studio.hourlyRate}
+            <span> / hour</span>
+          </p>
+
+          <Link href={`/studios/${studio._id}`} className="studio-view-link">
+            View details <ArrowIcon />
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export default function Home() {
+  const [studios, setStudios] = useState<Studio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const { data: session, isPending } = authClient.useSession();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const fetchStudios = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/studios/featured`);
+
+        if (!response.ok) {
+          throw new Error("Unable to load studios");
+        }
+
+        const data = await response.json();
+
+        const studioList = Array.isArray(data)
+          ? data
+          : Array.isArray(data.studios)
+            ? data.studios
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
+
+        setStudios(studioList.slice(0, 6));
+      } catch (error) {
+        console.error("Featured studios:", error);
+        setStudios([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudios();
+  }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+
+    try {
+      const { error } = await authClient.signOut();
+
+      if (error) {
+        toast.error(error.message || "Unable to log out.");
+        return;
+      }
+
+      setProfileMenuOpen(false);
+      toast.success("Logged out successfully.");
+      window.location.href = "/";
+    } catch {
+      toast.error("Something went wrong while logging out.");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="studio-home">
+      {/* NAVBAR */}
+      <header className="site-header">
+        <div className="site-header-inner">
+          <Link href="/" className="brand">
+            <span className="brand-icon">
+              <ApertureIcon />
+            </span>
+            <span>
+              studio<span className="brand-light">space</span>
+            </span>
+          </Link>
+
+          <nav className={`main-nav ${mobileMenuOpen ? "nav-open" : ""}`}>
+            <Link href="/" className="nav-link active">
+              Home
+            </Link>
+            <Link href="/studios" className="nav-link">
+              Explore studios
+            </Link>
+            <a href="#how-it-works" className="nav-link">
+              How it works
+            </a>
+            <a href="#about" className="nav-link">
+              About us
+            </a>
+          </nav>
+
+          <div className="header-actions">
+            {isPending ? (
+              <span className="login-link">Loading...</span>
+            ) : session ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className="flex items-center gap-3 rounded-full border border-white/15 px-3 py-2 text-sm text-white transition hover:bg-white/5"
+                  aria-expanded={profileMenuOpen}
+                  aria-label="Open profile menu"
+                >
+                  {session.user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 font-bold">
+                      {session.user.name?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                  )}
+
+                  <span>{session.user.name || "My Account"}</span>
+                  <span>⌄</span>
+                </button>
+
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-3 w-56 rounded-xl border border-white/10 bg-[#15111c] p-2 text-white shadow-xl">
+                    <div className="border-b border-white/10 px-4 py-3">
+                      <p className="font-semibold">
+                        {session.user.name}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-gray-400">
+                        {session.user.email}
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/dashboard"
+                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    >
+                      Dashboard
+                    </Link>
+
+                    <Link
+                      href="/add-studio"
+                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    >
+                      Add New Studio
+                    </Link>
+
+                    <Link
+                      href="/my-listings"
+                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    >
+                      My Studio Listings
+                    </Link>
+
+                    <Link
+                      href="/my-bookings"
+                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    >
+                      My Bookings
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                      className="block w-full rounded-lg px-4 py-3 text-left text-sm text-red-400 transition hover:bg-white/10 disabled:opacity-50"
+                    >
+                      {loggingOut ? "Logging out..." : "Log out"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link href="/login" className="login-link">
+                  Log in
+                </Link>
+
+                <Link
+                  href="/register"
+                  className="button button-dark header-register"
+                >
+                  Get started <ArrowIcon />
+                </Link>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="mobile-menu-button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <span />
+            <span />
+          </button>
+        </div>
+      </header>
+
+      {/* HERO SLIDER */}
+      <section className="hero-section">
+        <Swiper
+          modules={[Autoplay, EffectFade, Pagination]}
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          speed={900}
+          loop
+          autoplay={{
+            delay: 5500,
+            disableOnInteraction: false,
+          }}
+          pagination={{ clickable: true }}
+          className="hero-swiper"
+        >
+          {slides.map((slide, index) => (
+            <SwiperSlide key={slide.eyebrow}>
+              <div
+                className="hero-slide"
+                style={{ backgroundImage: `url("${slide.image}")` }}
+              >
+                <div className="hero-overlay" />
+                <div className="hero-content page-container">
+                  <div className="hero-copy">
+                    <span className="eyebrow hero-eyebrow">
+                      <span className="eyebrow-dot" />
+                      {slide.eyebrow}
+                    </span>
+
+                    <h1>{slide.title}</h1>
+
+                    <p>{slide.description}</p>
+
+                    <div className="hero-actions">
+                      <Link href="/studios" className="button button-accent">
+                        Explore studios <ArrowIcon />
+                      </Link>
+                      <Link href="/add-studio" className="hero-secondary-link">
+                        Host your space <span>↗</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="hero-slide-number">
+                    <span>0{index + 1}</span>
+                    <span className="hero-number-line" />
+                    <span>03</span>
+                  </div>
+                </div>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        <div className="hero-bottom-note">
+          <span>MADE FOR THE MAKERS</span>
+          <span>SCROLL TO EXPLORE ↓</span>
+        </div>
+      </section>
+
+      {/* INTRO STRIP */}
+      <section className="intro-strip">
+        <div className="page-container intro-strip-inner">
+          <p>
+            A space for every <span>creative possibility.</span>
           </p>
+          <span className="intro-strip-note">DISCOVER · CREATE · SHARE</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </section>
+
+      {/* FEATURED STUDIOS */}
+      <section className="section featured-section" id="studios">
+        <div className="page-container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">FIND YOUR SPACE</span>
+              <h2>
+                Spaces worth <span>creating in.</span>
+              </h2>
+              <p>
+                Explore creative workspaces made for ideas that deserve to be
+                brought to life.
+              </p>
+            </div>
+            <Link href="/studios" className="text-link desktop-section-link">
+              Explore all studios <ArrowIcon />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="studio-grid">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div className="studio-skeleton" key={index}>
+                  <div className="skeleton-image" />
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line short" />
+                </div>
+              ))}
+            </div>
+          ) : studios.length > 0 ? (
+            <div className="studio-grid">
+              {studios.map((studio) => (
+                <StudioCard key={studio._id} studio={studio} />
+              ))}
+            </div>
+          ) : (
+            <div className="featured-empty">
+              <span className="empty-icon">
+                <ApertureIcon />
+              </span>
+              <h3>Your next creative space starts here.</h3>
+              <p>
+                No studios have been listed yet. Be one of the first hosts to
+                share a creative space.
+              </p>
+              <Link href="/studios" className="button button-dark">
+                Explore studios <ArrowIcon />
+              </Link>
+            </div>
+          )}
+
+          <Link
+            href="/studios"
+            className="button button-outline mobile-all-link"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Explore all studios <ArrowIcon />
+          </Link>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* CATEGORIES */}
+      <section className="section categories-section">
+        <div className="page-container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">EXPLORE BY CATEGORY</span>
+              <h2>
+                Find the right space
+                <br />
+                for <span>your kind of work.</span>
+              </h2>
+            </div>
+            <p className="heading-aside">
+              Every creative project is different.
+              Find an environment that fits yours.
+            </p>
+          </div>
+
+          <div className="category-grid">
+            {categories.map((category, index) => (
+              <Link
+                href={`/studios?category=${encodeURIComponent(category.query)}`}
+                className={`category-card category-card-${index + 1}`}
+                key={category.name}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={category.image} alt={category.name} />
+                <div className="category-shade" />
+                <span className="category-icon">{category.icon}</span>
+                <div className="category-info">
+                  <span>{category.description}</span>
+                  <h3>{category.name}</h3>
+                </div>
+                <span className="category-arrow">
+                  <ArrowIcon />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="section process-section" id="how-it-works">
+        <div className="page-container">
+          <div className="section-heading process-heading">
+            <div>
+              <span className="eyebrow">SIMPLE BY DESIGN</span>
+              <h2>
+                From idea to <span>incredible.</span>
+              </h2>
+              <p>
+                Your next production is closer than you think. Four simple
+                steps to get started.
+              </p>
+            </div>
+            <span className="process-side-note">
+              LESS SEARCHING.
+              <br />
+              MORE CREATING.
+            </span>
+          </div>
+
+          <div className="process-grid">
+            {steps.map((step) => (
+              <article className="process-card" key={step.number}>
+                <div className="process-card-top">
+                  <span className="process-number">{step.number}</span>
+                  <span className="process-icon">{step.icon}</span>
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+                <div className="process-card-line" />
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOST CTA */}
+      <section className="host-section" id="about">
+        <div className="host-image">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1400&q=90"
+            alt="Creative studio workspace"
+          />
+        </div>
+        <div className="host-content">
+          <span className="eyebrow">BUILT FOR CREATORS & HOSTS</span>
+          <h2>
+            Your space could be
+            <br />
+            someone's <span>next big idea.</span>
+          </h2>
+          <p>
+            Have a studio, workshop, or production space? Put it on the map.
+            Connect with creators and make more of the space you already have.
+          </p>
+          <Link href="/add-studio" className="button button-accent">
+            Host your space <ArrowIcon />
+          </Link>
+          <span className="host-footnote">
+            SHARE YOUR SPACE. SUPPORT CREATIVITY.
+          </span>
+        </div>
+      </section>
+
+      {/* TRUST & SUPPORT */}
+      <section className="section assurance-section">
+        <div className="page-container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">A BETTER WAY TO CREATE</span>
+              <h2>
+                Good spaces. <span>Good people.</span>
+              </h2>
+              <p>
+                A more thoughtful way for studio hosts and creators to connect.
+              </p>
+            </div>
+          </div>
+
+          <div className="assurance-grid">
+            {assurances.map((item, index) => (
+              <article className="assurance-card" key={item.title}>
+                <span className="assurance-icon">{item.icon}</span>
+                <span className="assurance-index">0{index + 1}</span>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="final-cta">
+        <div className="page-container final-cta-inner">
+          <div>
+            <span className="eyebrow">YOUR NEXT CHAPTER STARTS HERE</span>
+            <h2>
+              Make something
+              <br />
+              <span>worth remembering.</span>
+            </h2>
+          </div>
+          <Link href="/studios" className="button button-light">
+            Find your studio <ArrowIcon />
+          </Link>
+        </div>
+        <div className="final-cta-decoration">S</div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="site-footer">
+        <div className="page-container">
+          <div className="footer-main">
+            <div className="footer-brand-column">
+              <Link href="/" className="brand footer-brand">
+                <span className="brand-icon">
+                  <ApertureIcon />
+                </span>
+                <span>
+                  studio<span className="brand-light">space</span>
+                </span>
+              </Link>
+              <p>
+                A home for creative spaces and the people who bring ideas to
+                life. Discover, connect, and create together.
+              </p>
+              <div className="footer-socials">
+                <a
+                  href="https://www.instagram.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Instagram"
+                >
+                  ig
+                </a>
+                <a
+                  href="https://www.facebook.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Facebook"
+                >
+                  f
+                </a>
+                <a
+                  href="https://x.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="X"
+                >
+                  𝕏
+                </a>
+              </div>
+            </div>
+
+            <div className="footer-column">
+              <h4>Explore</h4>
+              <Link href="/studios">All studios</Link>
+              <Link href="/studios?category=Photo%20Studios">
+                Photo studios
+              </Link>
+              <Link href="/studios?category=Sound%20Stages">
+                Sound stages
+              </Link>
+              <Link href="/studios?category=Podcast%20Rooms">
+                Podcast rooms
+              </Link>
+              <Link href="/studios?category=Music%20Suites">
+                Music suites
+              </Link>
+              <Link href="/studios?category=Art%20Workshops">
+                Art workshops
+              </Link>
+            </div>
+
+            <div className="footer-column">
+              <h4>StudioSpace</h4>
+              <a href="#about">About us</a>
+              <a href="#how-it-works">How it works</a>
+              <Link href="/login">Log in</Link>
+              <Link href="/register">Create an account</Link>
+              <Link href="/add-studio">Host your space</Link>
+            </div>
+
+            <div className="footer-newsletter">
+              <h4>Stay in the creative loop.</h4>
+              <p>
+                Get inspiration and updates from the StudioSpace community.
+              </p>
+              <form
+                className="newsletter-form"
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <label className="sr-only" htmlFor="newsletter-email">
+                  Email address
+                </label>
+                <input
+                  id="newsletter-email"
+                  type="email"
+                  placeholder="Your email address"
+                  required
+                />
+                <button type="submit" aria-label="Subscribe">
+                  <ArrowIcon />
+                </button>
+              </form>
+              <span className="newsletter-note">
+                No spam. Just good creative energy.
+              </span>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <span>
+              © {new Date().getFullYear()} StudioSpace. All rights reserved.
+            </span>
+            <span>MADE FOR THE MAKERS.</span>
+            <div>
+              <a href="#about">Terms</a>
+              <a href="#about">Privacy</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 }
