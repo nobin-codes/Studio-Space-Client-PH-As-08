@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StudioSpace
 
-## Getting Started
+**A Peer-to-Peer Creative Workspace & Production Studio Sharing Platform**
 
-First, run the development server:
+StudioSpace connects creators, photographers, filmmakers, podcasters, and other creative professionals with spaces they can book for their projects. Studio owners can list their workspaces, while users can explore available studios and manage their bookings.
+
+## Live Website
+
+https://studio-space-nu.vercel.app/
+
+## Features
+
+- **Explore Studios:** Browse creative spaces by category, location, and other details.
+- **Studio Details:** View studio information, pricing, amenities, and host details.
+- **Studio Listings:** Authenticated users can create, update, and manage their studio listings.
+- **Booking System:** Request bookings for available creative workspaces.
+- **Booking Management:** View booking history and manage booking statuses.
+- **Authentication:** Secure user authentication with Better Auth and Google OAuth.
+- **Responsive Design:** User-friendly interface for desktop, tablet, and mobile devices.
+- **Notifications:** Clear feedback for important user actions.
+
+## Technology Stack
+
+**Frontend**
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Better Auth
+- Sonner
+- Swiper
+- Lucide React
+
+**Backend**
+- Node.js
+- Express.js
+- TypeScript
+- MongoDB
+- Better Auth
+
+**Deployment**
+- Frontend: Vercel
+- Backend: Render
+- Database: MongoDB Atlas
+
+## Run Locally
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/nobin-codes/Studio-Space-Client-PH-As-08.git
+cd Studio-Space-Client-PH-As-08
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env.local` file in the client root directory:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
+
+Use your local backend URL if it runs on a different port.
+
+### 4. Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Backend Repository
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+https://github.com/nobin-codes/Studio-Space-Server-PH-As-08
 
-## Learn More
+## Live Backend API
 
-To learn more about Next.js, take a look at the following resources:
+https://studio-space-server-w8v0.onrender.com
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Test Account
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For evaluation, use the following account:
 
-## Deploy on Vercel
+- **Email:** studiospace.test@example.com
+- **Password:** [Add the test account password here]
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+You can also register a new account through the website.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Purpose
+
+StudioSpace aims to make creative workspace discovery and booking easier by bringing studio owners and creators together on one platform.
+
+---
+
+Developed as part of the Programming Hero Batch 14 assignment.
