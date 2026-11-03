@@ -19,12 +19,14 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleRegister = async () => {
-    try {
-      setGoogleLoading(true);
+    if (loading || googleLoading) return;
 
+    setGoogleLoading(true);
+
+    try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: `${window.location.origin}/`,
       });
 
       if (error) {
@@ -54,11 +56,11 @@ export default function RegisterPage() {
 
     try {
       const { error } = await authClient.signUp.email({
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
-        image: photoURL || undefined,
-        callbackURL: "/login",
+        image: photoURL.trim() || undefined,
+        callbackURL: `${window.location.origin}/login`,
       });
 
       if (error) {
@@ -85,6 +87,7 @@ export default function RegisterPage() {
     outline: "none",
     fontSize: "14px",
     transition: "border-color 0.2s ease",
+    boxSizing: "border-box",
   };
 
   const labelStyle: React.CSSProperties = {
@@ -117,6 +120,7 @@ export default function RegisterPage() {
           borderRadius: "24px",
           backgroundColor: "#15111c",
           boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
+          boxSizing: "border-box",
         }}
       >
         <Link
@@ -193,13 +197,12 @@ export default function RegisterPage() {
             color: "#1f1f1f",
             fontSize: "14px",
             fontWeight: 700,
-            cursor:
-              loading || googleLoading ? "not-allowed" : "pointer",
+            cursor: loading || googleLoading ? "not-allowed" : "pointer",
             opacity: googleLoading ? 0.7 : 1,
             transition: "all 0.2s ease",
           }}
         >
-          <svg width="19" height="19" viewBox="0 0 48 48">
+          <svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true">
             <path
               fill="#EA4335"
               d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.47 13.72 17.74 9.5 24 9.5Z"
@@ -263,12 +266,8 @@ export default function RegisterPage() {
               autoComplete="name"
               required
               style={inputStyle}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = "#a78bfa")
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = "#352b43")
-              }
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#a78bfa")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#352b43")}
             />
           </div>
 
@@ -285,12 +284,8 @@ export default function RegisterPage() {
               autoComplete="email"
               required
               style={inputStyle}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = "#a78bfa")
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = "#352b43")
-              }
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#a78bfa")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#352b43")}
             />
           </div>
 
@@ -308,12 +303,8 @@ export default function RegisterPage() {
               onChange={(e) => setPhotoURL(e.target.value)}
               placeholder="https://example.com/photo.jpg"
               style={inputStyle}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = "#a78bfa")
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = "#352b43")
-              }
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#a78bfa")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#352b43")}
             />
           </div>
 
@@ -382,15 +373,13 @@ export default function RegisterPage() {
               padding: "14px",
               border: "1px solid #a78bfa",
               borderRadius: "12px",
-              background:
-                loading
-                  ? "#59427e"
-                  : "linear-gradient(135deg, #8b5cf6, #6d28d9)",
+              background: loading
+                ? "#59427e"
+                : "linear-gradient(135deg, #8b5cf6, #6d28d9)",
               color: "#ffffff",
               fontSize: "14px",
               fontWeight: 700,
-              cursor:
-                loading || googleLoading ? "not-allowed" : "pointer",
+              cursor: loading || googleLoading ? "not-allowed" : "pointer",
               opacity: loading ? 0.7 : 1,
               boxShadow: "0 8px 24px rgba(139,92,246,0.2)",
               transition: "all 0.2s ease",
