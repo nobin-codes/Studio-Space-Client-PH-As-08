@@ -26,13 +26,14 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (loading) return;
+
+    if (loading || googleLoading) return;
 
     setLoading(true);
 
     try {
       const { error } = await authClient.signIn.email({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -42,7 +43,7 @@ export default function LoginPage() {
       }
 
       toast.success("Welcome back!");
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -52,14 +53,20 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (googleLoading) return;
+    if (loading || googleLoading) return;
 
     try {
       setGoogleLoading(true);
-      await authClient.signIn.social({
+
+      const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: `${window.location.origin}/`,
       });
+
+      if (error) {
+        toast.error(error.message || "Google login failed.");
+        setGoogleLoading(false);
+      }
     } catch {
       toast.error("Google login failed. Please try again.");
       setGoogleLoading(false);
@@ -68,12 +75,10 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[#0b0911] text-white flex items-center justify-center px-5 py-10 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute top-[-180px] left-[-150px] w-[400px] h-[400px] rounded-full bg-violet-700/15 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-180px] right-[-150px] w-[400px] h-[400px] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none" />
 
       <div className="relative w-full max-w-[1000px] grid md:grid-cols-2 overflow-hidden rounded-[28px] border border-white/10 bg-[#15121d] shadow-2xl">
-
         {/* Left panel */}
         <section className="hidden md:flex flex-col justify-between p-10 lg:p-12 bg-gradient-to-br from-[#261b43] via-[#1b1530] to-[#100d19]">
           <Link href="/" className="text-2xl font-extrabold tracking-tight">
@@ -230,11 +235,25 @@ export default function LoginPage() {
             className="w-full h-12 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-semibold text-slate-200 flex items-center justify-center gap-3 hover:bg-white/[0.08] hover:border-white/25 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
-              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" transform="translate(0 5)" />
-              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.47-4.72 7.15l7.22 5.6c4.21-3.89 6.54-9.62 6.54-17.22Z" />
-              <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.78-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.54 2.56 10.78l7.97-6.19Z" transform="translate(0 0)" />
-              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.78l-7.22-5.6c-2 1.35-4.56 2.15-8.68 2.15-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" />
+              <path
+                fill="#EA4335"
+                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
+                transform="translate(0 5)"
+              />
+              <path
+                fill="#4285F4"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.47-4.72 7.15l7.22 5.6c4.21-3.89 6.54-9.62 6.54-17.22Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.78-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.54 2.56 10.78l7.97-6.19Z"
+              />
+              <path
+                fill="#34A853"
+                d="M24 48c6.48 0 11.93-2.13 15.9-5.78l-7.22-5.6c-2 1.35-4.56 2.15-8.68 2.15-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
+              />
             </svg>
+
             {googleLoading ? "Connecting..." : "Continue with Google"}
           </button>
 
@@ -252,4 +271,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
