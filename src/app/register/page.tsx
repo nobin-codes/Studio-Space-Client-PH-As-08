@@ -37,7 +37,7 @@ export default function RegisterPage() {
         name,
         email,
         password,
-        photoURL,
+        image: photoURL,
         callbackURL: "/login",
       });
 

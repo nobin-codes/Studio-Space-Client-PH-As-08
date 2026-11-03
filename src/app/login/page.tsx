@@ -101,7 +101,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} StudioSpace. All rights reserved.
+            © 2026 StudioSpace. All rights reserved.
           </p>
         </section>
 

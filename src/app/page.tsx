@@ -250,6 +250,11 @@ function StudioCard({ studio }: { studio: Studio }) {
 export default function Home() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+useEffect(() => {
+  setIsMounted(true);
+}, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -452,64 +457,67 @@ export default function Home() {
       </header>
 
       {/* HERO SLIDER */}
-      <section className="hero-section">
-        <Swiper
-          modules={[Autoplay, EffectFade, Pagination]}
-          effect="fade"
-          fadeEffect={{ crossFade: true }}
-          speed={900}
-          loop
-          autoplay={{
-            delay: 5500,
-            disableOnInteraction: false,
-          }}
-          pagination={{ clickable: true }}
-          className="hero-swiper"
-        >
-          {slides.map((slide, index) => (
-            <SwiperSlide key={slide.eyebrow}>
-              <div
-                className="hero-slide"
-                style={{ backgroundImage: `url("${slide.image}")` }}
-              >
-                <div className="hero-overlay" />
-                <div className="hero-content page-container">
-                  <div className="hero-copy">
-                    <span className="eyebrow hero-eyebrow">
-                      <span className="eyebrow-dot" />
-                      {slide.eyebrow}
-                    </span>
+<section className="hero-section">
+  {isMounted ? (
+    <Swiper
+      modules={[Autoplay, EffectFade, Pagination]}
+      effect="fade"
+      fadeEffect={{ crossFade: true }}
+      speed={900}
+      loop
+      autoplay={{
+        delay: 5500,
+        disableOnInteraction: false,
+      }}
+      pagination={{ clickable: true }}
+      className="hero-swiper"
+    >
+      {slides.map((slide, index) => (
+        <SwiperSlide key={slide.eyebrow}>
+          <div
+            className="hero-slide"
+            style={{ backgroundImage: `url("${slide.image}")` }}
+          >
+            <div className="hero-overlay" />
+            <div className="hero-content page-container">
+              <div className="hero-copy">
+                <span className="eyebrow hero-eyebrow">
+                  <span className="eyebrow-dot" />
+                  {slide.eyebrow}
+                </span>
 
-                    <h1>{slide.title}</h1>
+                <h1>{slide.title}</h1>
+                <p>{slide.description}</p>
 
-                    <p>{slide.description}</p>
-
-                    <div className="hero-actions">
-                      <Link href="/studios" className="button button-accent">
-                        Explore studios <ArrowIcon />
-                      </Link>
-                      <Link href="/add-studio" className="hero-secondary-link">
-                        Host your space <span>↗</span>
-                      </Link>
-                    </div>
-                  </div>
-
-                  <div className="hero-slide-number">
-                    <span>0{index + 1}</span>
-                    <span className="hero-number-line" />
-                    <span>03</span>
-                  </div>
+                <div className="hero-actions">
+                  <Link href="/studios" className="button button-accent">
+                    Explore studios <ArrowIcon />
+                  </Link>
+                  <Link href="/add-studio" className="hero-secondary-link">
+                    Host your space <span>↗</span>
+                  </Link>
                 </div>
               </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
 
-        <div className="hero-bottom-note">
-          <span>MADE FOR THE MAKERS</span>
-          <span>SCROLL TO EXPLORE ↓</span>
-        </div>
-      </section>
+              <div className="hero-slide-number">
+                <span>0{index + 1}</span>
+                <span className="hero-number-line" />
+                <span>03</span>
+              </div>
+            </div>
+          </div>
+        </SwiperSlide>
+      ))}
+    </Swiper>
+  ) : (
+    <div className="hero-swiper" />
+  )}
+
+  <div className="hero-bottom-note">
+    <span>MADE FOR THE MAKERS</span>
+    <span>SCROLL TO EXPLORE ↓</span>
+  </div>
+</section>
 
       {/* INTRO STRIP */}
       <section className="intro-strip">
@@ -749,8 +757,7 @@ export default function Home() {
                 </span>
               </Link>
               <p>
-                A home for creative spaces and the people who bring ideas to
-                life. Discover, connect, and create together.
+                A home for creative spaces and the people who bring ideas to.
               </p>
               <div className="footer-socials">
                 <a
@@ -839,7 +846,7 @@ export default function Home() {
 
           <div className="footer-bottom">
             <span>
-              © {new Date().getFullYear()} StudioSpace. All rights reserved.
+              © 2026 StudioSpace. All rights reserved.
             </span>
             <span>MADE FOR THE MAKERS.</span>
             <div>

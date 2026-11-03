@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   LoaderCircle,
   Ticket,
+  XCircle,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
@@ -19,28 +20,19 @@ type Booking = {
   id?: string;
   studioId?: string;
   studioTitle?: string;
-  studioImage?: string;
   studioLocation?: string;
-  date?: string;
   bookingDate?: string;
   startTime?: string;
   endTime?: string;
-  totalAmount?: number;
   totalPrice?: number;
   status?: string;
-  userEmail?: string;
-  [key: string]: unknown;
 };
 
 function getBookingId(booking: Booking) {
   return booking._id || booking.id || "";
 }
 
-function getBookingDate(booking: Booking) {
-  return booking.date || booking.bookingDate || "";
-}
-
-function formatDate(value: string) {
+function formatDate(value = "") {
   if (!value) return "Date not available";
 
   const date = new Date(value);
@@ -61,7 +53,7 @@ function getStatusStyle(status = "") {
     return { background: "#dcfce7", color: "#166534" };
   }
 
-  if (value === "cancelled" || value === "canceled") {
+  if (value === "cancelled") {
     return { background: "#fee2e2", color: "#991b1b" };
   }
 
@@ -78,6 +70,7 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancellingId, setCancellingId] = useState("");
 
   useEffect(() => {
     if (isPending) return;
@@ -94,33 +87,25 @@ export default function MyBookingsPage() {
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+        if (!apiUrl) {
+          throw new Error("API URL is not configured.");
+        }
+
         const response = await fetch(
-          `${apiUrl}/api/bookings?email=${encodeURIComponent(
-            session.user.email
-          )}`,
+          `${apiUrl}/api/bookings/my-bookings?email=${encodeURIComponent(session.user.email)}`,
           {
             method: "GET",
             credentials: "include",
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Unable to load your bookings.");
-        }
-
         const result = await response.json();
 
-        const bookingList = Array.isArray(result)
-          ? result
-          : Array.isArray(result.bookings)
-          ? result.bookings
-          : Array.isArray(result.data)
-          ? result.data
-          : Array.isArray(result.data?.bookings)
-          ? result.data.bookings
-          : [];
+        if (!response.ok) {
+          throw new Error(result.message || "Unable to load your bookings.");
+        }
 
-        setBookings(bookingList);
+        setBookings(Array.isArray(result.data) ? result.data : []);
       } catch (err) {
         setError(
           err instanceof Error
@@ -133,7 +118,55 @@ export default function MyBookingsPage() {
     };
 
     fetchBookings();
-  }, [session, isPending]);
+  }, [session?.user?.email, isPending]);
+
+  const handleCancelBooking = async (id: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this booking?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setCancellingId(id);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+      if (!apiUrl) {
+        throw new Error("API URL is not configured.");
+      }
+
+      const response = await fetch(
+        `${apiUrl}/api/bookings/${id}/cancel`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to cancel booking.");
+      }
+
+      setBookings((previous) =>
+        previous.map((booking) =>
+          getBookingId(booking) === id
+            ? { ...booking, status: "Cancelled" }
+            : booking
+        )
+      );
+    } catch (err) {
+      window.alert(
+        err instanceof Error
+          ? err.message
+          : "Unable to cancel booking."
+      );
+    } finally {
+      setCancellingId("");
+    }
+  };
 
   if (isPending || loading) {
     return (
@@ -156,6 +189,14 @@ export default function MyBookingsPage() {
       </main>
     );
   }
+
+  const confirmedCount = bookings.filter(
+    (booking) => booking.status === "Confirmed"
+  ).length;
+
+  const pendingCount = bookings.filter(
+    (booking) => booking.status === "Pending"
+  ).length;
 
   return (
     <main style={styles.page}>
@@ -186,14 +227,7 @@ export default function MyBookingsPage() {
           <div style={styles.statCard}>
             <CalendarDays size={22} color="#34d399" />
             <div>
-              <p style={styles.statNumber}>
-                {
-                  bookings.filter(
-                    (booking) =>
-                      booking.status?.toLowerCase() === "confirmed"
-                  ).length
-                }
-              </p>
+              <p style={styles.statNumber}>{confirmedCount}</p>
               <p style={styles.statLabel}>Confirmed</p>
             </div>
           </div>
@@ -201,14 +235,7 @@ export default function MyBookingsPage() {
           <div style={styles.statCard}>
             <Clock size={22} color="#fbbf24" />
             <div>
-              <p style={styles.statNumber}>
-                {
-                  bookings.filter(
-                    (booking) =>
-                      booking.status?.toLowerCase() === "pending"
-                  ).length
-                }
-              </p>
+              <p style={styles.statNumber}>{pendingCount}</p>
               <p style={styles.statLabel}>Pending</p>
             </div>
           </div>
@@ -246,14 +273,9 @@ export default function MyBookingsPage() {
           <div style={styles.bookingList}>
             {bookings.map((booking, index) => {
               const id = getBookingId(booking);
-              const bookingDate = getBookingDate(booking);
-              const amount = booking.totalAmount ?? booking.totalPrice;
 
               return (
-                <article
-                  key={id || index}
-                  style={styles.bookingCard}
-                >
+                <article key={id || index} style={styles.bookingCard}>
                   <div style={styles.bookingTop}>
                     <div>
                       <h3 style={styles.bookingTitle}>
@@ -277,16 +299,14 @@ export default function MyBookingsPage() {
                   <div style={styles.detailsGrid}>
                     <div style={styles.detail}>
                       <CalendarDays size={17} color="#a78bfa" />
-                      <span>{formatDate(bookingDate)}</span>
+                      <span>{formatDate(booking.bookingDate)}</span>
                     </div>
 
                     <div style={styles.detail}>
                       <Clock size={17} color="#a78bfa" />
                       <span>
                         {booking.startTime || "N/A"}
-                        {booking.endTime
-                          ? ` - ${booking.endTime}`
-                          : ""}
+                        {booking.endTime ? ` - ${booking.endTime}` : ""}
                       </span>
                     </div>
 
@@ -307,20 +327,40 @@ export default function MyBookingsPage() {
                     <div>
                       <p style={styles.priceLabel}>Total amount</p>
                       <p style={styles.price}>
-                        {typeof amount === "number"
-                          ? `$${amount.toFixed(2)}`
+                        {typeof booking.totalPrice === "number"
+                          ? `$${booking.totalPrice.toFixed(2)}`
                           : "Not available"}
                       </p>
                     </div>
 
-                    {booking.studioId && (
-                      <Link
-                        href={`/studios/${booking.studioId}`}
-                        style={styles.secondaryButton}
-                      >
-                        View Studio
-                      </Link>
-                    )}
+                    <div style={styles.actions}>
+                      {booking.studioId && (
+                        <Link
+                          href={`/studios/${booking.studioId}`}
+                          style={styles.secondaryButton}
+                        >
+                          View Studio
+                        </Link>
+                      )}
+
+                      {booking.status === "Pending" && id && (
+                        <button
+                          onClick={() => handleCancelBooking(id)}
+                          disabled={cancellingId === id}
+                          style={{
+                            ...styles.cancelButton,
+                            opacity: cancellingId === id ? 0.6 : 1,
+                          }}
+                        >
+                          {cancellingId === id ? (
+                            <LoaderCircle size={15} className="animate-spin" />
+                          ) : (
+                            <XCircle size={15} />
+                          )}
+                          Cancel Booking
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </article>
               );
@@ -411,6 +451,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     textDecoration: "none",
     border: "1px solid #403456",
+    cursor: "pointer",
+  },
+  cancelButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "7px",
+    background: "#3b1824",
+    color: "#fda4af",
+    padding: "10px 16px",
+    borderRadius: "9px",
+    fontSize: "13px",
+    fontWeight: 600,
+    border: "1px solid #713044",
     cursor: "pointer",
   },
   statsGrid: {
@@ -539,6 +593,12 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     paddingTop: "18px",
     borderTop: "1px solid #30283e",
+  },
+  actions: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "10px",
   },
   priceLabel: {
     color: "#a8a1b8",
