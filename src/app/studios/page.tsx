@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Search,
   MapPin,
@@ -36,6 +36,53 @@ const categories = [
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900";
+
+function normalizeCategory(value: string) {
+  const normalized = value.trim().toLowerCase();
+
+  // Keep older listings compatible with the current category name.
+  if (normalized === "film stages") {
+    return "sound stages";
+  }
+
+  return normalized;
+}
+
+function getStudiosFromResponse(result: unknown): Studio[] {
+  if (Array.isArray(result)) {
+    return result as Studio[];
+  }
+
+  if (!result || typeof result !== "object") {
+    return [];
+  }
+
+  const data = result as {
+    studios?: unknown;
+    data?: unknown;
+  };
+
+  if (Array.isArray(data.studios)) {
+    return data.studios as Studio[];
+  }
+
+  if (Array.isArray(data.data)) {
+    return data.data as Studio[];
+  }
+
+  if (data.data && typeof data.data === "object") {
+    const nestedData = data.data as { studios?: unknown };
+
+    if (Array.isArray(nestedData.studios)) {
+      return nestedData.studios as Studio[];
+    }
+  }
+
+  return [];
+}
+
 export default function ExploreStudiosPage() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,44 +91,95 @@ export default function ExploreStudiosPage() {
   const [category, setCategory] = useState("All Studios");
   const [sort, setSort] = useState("default");
 
-  const fetchStudios = async () => {
+  const fetchStudios = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/api/studios`);
+      const response = await fetch(`${API_URL}/api/studios`, {
+        method: "GET",
+        cache: "no-store",
+        signal,
+      });
 
       if (!response.ok) {
-        throw new Error(`Server returned error ${response.status}`);
+        throw new Error(
+          `Unable to load studios. Server returned ${response.status}.`
+        );
       }
 
-      const result = await response.json();
-
-      const list = Array.isArray(result)
-        ? result
-        : Array.isArray(result.studios)
-          ? result.studios
-          : Array.isArray(result.data)
-            ? result.data
-            : Array.isArray(result.data?.studios)
-              ? result.data.studios
-              : [];
+      const result: unknown = await response.json();
+      const list = getStudiosFromResponse(result);
 
       setStudios(list);
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+
       setError(
         err instanceof Error
           ? err.message
           : "Unable to connect to the StudioSpace server."
       );
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
-  };
-
-  useEffect(() => {
-    fetchStudios();
   }, []);
+
+  // Load studios from the server.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetchStudios(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchStudios]);
+
+  // Read the selected category from the homepage URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const selectedCategory = params.get("category");
+
+    if (!selectedCategory) {
+      return;
+    }
+
+    const matchedCategory = categories.find(
+      (item) =>
+        item !== "All Studios" &&
+        normalizeCategory(item) === normalizeCategory(selectedCategory)
+    );
+
+    if (matchedCategory) {
+      setCategory(matchedCategory);
+    }
+  }, []);
+
+  // Keep the URL updated when the user changes category.
+  const handleCategoryChange = (selectedCategory: string) => {
+    setCategory(selectedCategory);
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (selectedCategory === "All Studios") {
+      params.delete("category");
+    } else {
+      params.set("category", selectedCategory);
+    }
+
+    const queryString = params.toString();
+
+    const newUrl = queryString
+      ? `${window.location.pathname}?${queryString}`
+      : window.location.pathname;
+
+    window.history.replaceState(null, "", newUrl);
+  };
 
   const filteredStudios = useMemo(() => {
     let result = [...studios];
@@ -89,12 +187,13 @@ export default function ExploreStudiosPage() {
     if (category !== "All Studios") {
       result = result.filter(
         (studio) =>
-          studio.category?.toLowerCase() === category.toLowerCase()
+          normalizeCategory(studio.category || "") ===
+          normalizeCategory(category)
       );
     }
 
     if (search.trim()) {
-      const keyword = search.toLowerCase();
+      const keyword = search.trim().toLowerCase();
 
       result = result.filter(
         (studio) =>
@@ -105,15 +204,25 @@ export default function ExploreStudiosPage() {
     }
 
     if (sort === "low-to-high") {
-      result.sort((a, b) => a.hourlyRate - b.hourlyRate);
+      result.sort(
+        (a, b) => Number(a.hourlyRate) - Number(b.hourlyRate)
+      );
     }
 
     if (sort === "high-to-low") {
-      result.sort((a, b) => b.hourlyRate - a.hourlyRate);
+      result.sort(
+        (a, b) => Number(b.hourlyRate) - Number(a.hourlyRate)
+      );
     }
 
     return result;
   }, [studios, category, search, sort]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setSort("default");
+    handleCategoryChange("All Studios");
+  };
 
   return (
     <main
@@ -127,13 +236,14 @@ export default function ExploreStudiosPage() {
       {/* Navigation */}
       <header
         style={{
-          height: 76,
+          minHeight: 76,
           background: "#fff",
           borderBottom: "1px solid #e8e7e1",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 max(24px, calc((100% - 1200px) / 2))",
+          gap: 20,
+          padding: "16px max(24px, calc((100% - 1200px) / 2))",
           position: "sticky",
           top: 0,
           zIndex: 20,
@@ -145,17 +255,38 @@ export default function ExploreStudiosPage() {
             fontSize: 24,
             fontWeight: 800,
             letterSpacing: "-1.3px",
+            color: "#181916",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
           }}
         >
           Studio<span style={{ color: "#81965f" }}>Space.</span>
         </Link>
 
-        <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          <Link href="/" style={navStyle}>Home</Link>
-          <Link href="/studios" style={{ ...navStyle, color: "#81965f" }}>
+        <nav
+          aria-label="Main navigation"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            flexWrap: "wrap",
+          }}
+        >
+          <Link href="/" style={navStyle}>
+            Home
+          </Link>
+
+          <Link
+            href="/studios"
+            aria-current="page"
+            style={{ ...navStyle, color: "#81965f" }}
+          >
             Explore Studios
           </Link>
-          <Link href="/dashboard" style={navStyle}>Dashboard</Link>
+
+          <Link href="/dashboard" style={navStyle}>
+            Dashboard
+          </Link>
         </nav>
       </header>
 
@@ -205,7 +336,8 @@ export default function ExploreStudiosPage() {
               margin: "0 auto",
             }}
           >
-            Discover inspiring studios and creative spaces for your next project.
+            Discover inspiring studios and creative spaces for your next
+            project.
           </p>
 
           <div
@@ -214,7 +346,7 @@ export default function ExploreStudiosPage() {
               alignItems: "center",
               gap: 13,
               maxWidth: 620,
-              height: 60,
+              minHeight: 60,
               margin: "35px auto 0",
               padding: "0 20px",
               background: "#fff",
@@ -223,13 +355,16 @@ export default function ExploreStudiosPage() {
             }}
           >
             <Search size={21} />
+
             <input
+              type="search"
+              aria-label="Search studios"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search studios, locations or categories..."
               style={{
                 width: "100%",
-                height: "100%",
+                height: 58,
                 border: 0,
                 outline: 0,
                 background: "transparent",
@@ -261,6 +396,7 @@ export default function ExploreStudiosPage() {
         >
           <div>
             <span style={eyebrowStyle}>EXPLORE SPACES</span>
+
             <h2
               style={{
                 fontFamily: "Manrope, sans-serif",
@@ -271,6 +407,7 @@ export default function ExploreStudiosPage() {
             >
               Studios worth creating in.
             </h2>
+
             <p style={{ color: "#777970", fontSize: 14 }}>
               Find the right environment for your next big idea.
             </p>
@@ -288,7 +425,9 @@ export default function ExploreStudiosPage() {
             }}
           >
             <SlidersHorizontal size={16} color="#777970" />
+
             <select
+              aria-label="Sort studios"
               value={sort}
               onChange={(event) => setSort(event.target.value)}
               style={{
@@ -324,9 +463,12 @@ export default function ExploreStudiosPage() {
               <button
                 key={item}
                 type="button"
-                onClick={() => setCategory(item)}
+                aria-pressed={active}
+                onClick={() => handleCategoryChange(item)}
                 style={{
-                  border: active ? "1px solid #20251e" : "1px solid #e8e7e1",
+                  border: active
+                    ? "1px solid #20251e"
+                    : "1px solid #e8e7e1",
                   background: active ? "#20251e" : "#fff",
                   color: active ? "#fff" : "#55574f",
                   borderRadius: 30,
@@ -361,33 +503,38 @@ export default function ExploreStudiosPage() {
 
         {/* Loading */}
         {loading && (
-          <div style={messageStyle}>
+          <div style={messageStyle} role="status">
             <LoaderCircle
               size={35}
               color="#81965f"
-              style={{ animation: "spin 1s linear infinite" }}
+              style={{ animation: "studioSpaceSpin 1s linear infinite" }}
             />
+
             <p>Finding creative spaces...</p>
           </div>
         )}
 
         {/* Error */}
         {!loading && error && (
-          <div style={messageStyle}>
+          <div style={messageStyle} role="alert">
             <Compass size={38} color="#81965f" />
-            <h3 style={{ fontSize: 22 }}>Unable to connect to StudioSpace.</h3>
-            <p style={{ color: "#777970", fontSize: 14 }}>{error}</p>
+
+            <h3 style={{ fontSize: 22 }}>
+              Unable to connect to StudioSpace.
+            </h3>
+
+            <p style={{ color: "#777970", fontSize: 14 }}>
+              {error}
+            </p>
+
             <button
               type="button"
-              onClick={fetchStudios}
+              onClick={() => void fetchStudios()}
               style={actionButtonStyle}
             >
               <RefreshCw size={16} />
               Try again
             </button>
-            <p style={{ color: "#777970", fontSize: 12 }}>
-              Make sure your backend server is running on port 5000.
-            </p>
           </div>
         )}
 
@@ -395,16 +542,18 @@ export default function ExploreStudiosPage() {
         {!loading && !error && filteredStudios.length === 0 && (
           <div style={messageStyle}>
             <Compass size={38} color="#81965f" />
-            <h3 style={{ fontSize: 22 }}>No studios found.</h3>
+
+            <h3 style={{ fontSize: 22 }}>
+              No studios found.
+            </h3>
+
             <p style={{ color: "#777970", fontSize: 14 }}>
               Try another search or category.
             </p>
+
             <button
               type="button"
-              onClick={() => {
-                setSearch("");
-                setCategory("All Studios");
-              }}
+              onClick={clearFilters}
               style={actionButtonStyle}
             >
               Clear filters
@@ -417,7 +566,8 @@ export default function ExploreStudiosPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
               gap: 25,
             }}
           >
@@ -431,6 +581,7 @@ export default function ExploreStudiosPage() {
                   border: "1px solid #e8e7e1",
                   overflow: "hidden",
                   color: "#181916",
+                  textDecoration: "none",
                 }}
               >
                 <div
@@ -442,18 +593,16 @@ export default function ExploreStudiosPage() {
                   }}
                 >
                   <img
-                    src={
-                      studio.imageUrl ||
-                      studio.image ||
-                      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900"
-                    }
+                    src={studio.imageUrl || studio.image || DEFAULT_IMAGE}
                     alt={studio.title}
+                    loading="lazy"
                     style={{
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
                     }}
                   />
+
                   <span
                     style={{
                       position: "absolute",
@@ -505,8 +654,9 @@ export default function ExploreStudiosPage() {
                   >
                     <p style={{ margin: 0, fontSize: 12 }}>
                       <strong style={{ fontSize: 19 }}>
-                        ৳{studio.hourlyRate}
+                        ৳{Number(studio.hourlyRate).toLocaleString("en-BD")}
                       </strong>
+
                       <span style={{ color: "#777970" }}> / hour</span>
                     </p>
 
@@ -529,6 +679,7 @@ export default function ExploreStudiosPage() {
         )}
       </section>
 
+      {/* Footer */}
       <footer
         style={{
           background: "#191d18",
@@ -542,15 +693,22 @@ export default function ExploreStudiosPage() {
       </footer>
 
       <style jsx global>{`
-        @keyframes spin {
-          to { transform: rotate(goooooo
-          360deg); }
+        @keyframes studioSpaceSpin {
+          to {
+            transform: rotate(360deg);
+          }
         }
 
         @media (max-width: 600px) {
+          header {
+            padding-left: 18px !important;
+            padding-right: 18px !important;
+          }
+
           header nav {
             gap: 12px !important;
           }
+
           header nav a {
             font-size: 11px !important;
           }
@@ -564,6 +722,7 @@ const navStyle = {
   fontSize: 13,
   fontWeight: 600,
   color: "#696b63",
+  textDecoration: "none",
 };
 
 const eyebrowStyle = {
