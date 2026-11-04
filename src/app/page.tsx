@@ -1,16 +1,8 @@
-
-"use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
-import { toast } from "sonner";
-import {
-  Swiper,
-  SwiperSlide,
-} from "swiper/react";
+import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade, Pagination } from "swiper/modules";
+
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/pagination";
@@ -186,7 +178,13 @@ function ApertureIcon() {
       fill="none"
       aria-hidden="true"
     >
-      <circle cx="16" cy="16" r="13.5" stroke="currentColor" strokeWidth="1.7" />
+      <circle
+        cx="16"
+        cy="16"
+        r="13.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
       <path
         d="m16 2.5 5.5 10.1M29.5 16H18M22.7 27.7l-5.4-10.2M2.5 16h11.8M9.3 4.3l5.4 10.2"
         stroke="currentColor"
@@ -238,7 +236,10 @@ function StudioCard({ studio }: { studio: Studio }) {
             <span> / hour</span>
           </p>
 
-          <Link href={`/studios/${studio._id}`} className="studio-view-link">
+          <Link
+            href={`/studios/${studio._id}`}
+            className="studio-view-link"
+          >
             View details <ArrowIcon />
           </Link>
         </div>
@@ -252,15 +253,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
-useEffect(() => {
-  setIsMounted(true);
-}, []);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const { data: session, isPending } = authClient.useSession();
-  const pathname = usePathname();
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchStudios = async () => {
@@ -293,231 +288,78 @@ useEffect(() => {
     fetchStudios();
   }, []);
 
-  useEffect(() => {
-    setMobileMenuOpen(false);
-    setProfileMenuOpen(false);
-  }, [pathname]);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-
-    try {
-      const { error } = await authClient.signOut();
-
-      if (error) {
-        toast.error(error.message || "Unable to log out.");
-        return;
-      }
-
-      setProfileMenuOpen(false);
-      toast.success("Logged out successfully.");
-      window.location.href = "/";
-    } catch {
-      toast.error("Something went wrong while logging out.");
-    } finally {
-      setLoggingOut(false);
-    }
-  };
-
   return (
     <main className="studio-home">
-      {/* NAVBAR */}
-      <header className="site-header">
-        <div className="site-header-inner">
-          <Link href="/" className="brand">
-            <span className="brand-icon">
-              <ApertureIcon />
-            </span>
-            <span>
-              studio<span className="brand-light">space</span>
-            </span>
-          </Link>
-
-          <nav className={`main-nav ${mobileMenuOpen ? "nav-open" : ""}`}>
-            <Link href="/" className="nav-link active">
-              Home
-            </Link>
-            <Link href="/studios" className="nav-link">
-              Explore studios
-            </Link>
-            <a href="#how-it-works" className="nav-link">
-              How it works
-            </a>
-            <a href="#about" className="nav-link">
-              About us
-            </a>
-          </nav>
-
-          <div className="header-actions">
-            {isPending ? (
-              <span className="login-link">Loading...</span>
-            ) : session ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center gap-3 rounded-full border border-white/15 px-3 py-2 text-sm text-white transition hover:bg-white/5"
-                  aria-expanded={profileMenuOpen}
-                  aria-label="Open profile menu"
+      {/* HERO SLIDER */}
+      <section className="hero-section">
+        {isMounted ? (
+          <Swiper
+            modules={[Autoplay, EffectFade, Pagination]}
+            effect="fade"
+            fadeEffect={{ crossFade: true }}
+            speed={900}
+            loop
+            autoplay={{
+              delay: 5500,
+              disableOnInteraction: false,
+            }}
+            pagination={{ clickable: true }}
+            className="hero-swiper"
+          >
+            {slides.map((slide, index) => (
+              <SwiperSlide key={slide.eyebrow}>
+                <div
+                  className="hero-slide"
+                  style={{ backgroundImage: `url("${slide.image}")` }}
                 >
-                  {session.user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 font-bold">
-                      {session.user.name?.charAt(0).toUpperCase() || "U"}
-                    </span>
-                  )}
+                  <div className="hero-overlay" />
 
-                  <span>{session.user.name || "My Account"}</span>
-                  <span>⌄</span>
-                </button>
+                  <div className="hero-content page-container">
+                    <div className="hero-copy">
+                      <span className="eyebrow hero-eyebrow">
+                        <span className="eyebrow-dot" />
+                        {slide.eyebrow}
+                      </span>
 
-                {profileMenuOpen && (
-                  <div className="absolute right-0 top-full z-50 mt-3 w-56 rounded-xl border border-white/10 bg-[#15111c] p-2 text-white shadow-xl">
-                    <div className="border-b border-white/10 px-4 py-3">
-                      <p className="font-semibold">
-                        {session.user.name}
-                      </p>
-                      <p className="mt-1 truncate text-xs text-gray-400">
-                        {session.user.email}
-                      </p>
+                      <h1>{slide.title}</h1>
+                      <p>{slide.description}</p>
+
+                      <div className="hero-actions">
+                        <Link
+                          href="/studios"
+                          className="button button-accent"
+                        >
+                          Explore studios <ArrowIcon />
+                        </Link>
+
+                        <Link
+                          href="/add-studio"
+                          className="hero-secondary-link"
+                        >
+                          Host your space <span>↗</span>
+                        </Link>
+                      </div>
                     </div>
 
-                    <Link
-                      href="/dashboard"
-                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
-                    >
-                      Dashboard
-                    </Link>
-
-                    <Link
-                      href="/add-studio"
-                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
-                    >
-                      Add New Studio
-                    </Link>
-
-                    <Link
-                      href="/my-listings"
-                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
-                    >
-                      My Studio Listings
-                    </Link>
-
-                    <Link
-                      href="/my-bookings"
-                      className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
-                    >
-                      My Bookings
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      disabled={loggingOut}
-                      className="block w-full rounded-lg px-4 py-3 text-left text-sm text-red-400 transition hover:bg-white/10 disabled:opacity-50"
-                    >
-                      {loggingOut ? "Logging out..." : "Log out"}
-                    </button>
+                    <div className="hero-slide-number">
+                      <span>0{index + 1}</span>
+                      <span className="hero-number-line" />
+                      <span>03</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link href="/login" className="login-link">
-                  Log in
-                </Link>
-
-                <Link
-                  href="/register"
-                  className="button button-dark header-register"
-                >
-                  Get started <ArrowIcon />
-                </Link>
-              </>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="mobile-menu-button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            <span />
-            <span />
-          </button>
-        </div>
-      </header>
-
-      {/* HERO SLIDER */}
-<section className="hero-section">
-  {isMounted ? (
-    <Swiper
-      modules={[Autoplay, EffectFade, Pagination]}
-      effect="fade"
-      fadeEffect={{ crossFade: true }}
-      speed={900}
-      loop
-      autoplay={{
-        delay: 5500,
-        disableOnInteraction: false,
-      }}
-      pagination={{ clickable: true }}
-      className="hero-swiper"
-    >
-      {slides.map((slide, index) => (
-        <SwiperSlide key={slide.eyebrow}>
-          <div
-            className="hero-slide"
-            style={{ backgroundImage: `url("${slide.image}")` }}
-          >
-            <div className="hero-overlay" />
-            <div className="hero-content page-container">
-              <div className="hero-copy">
-                <span className="eyebrow hero-eyebrow">
-                  <span className="eyebrow-dot" />
-                  {slide.eyebrow}
-                </span>
-
-                <h1>{slide.title}</h1>
-                <p>{slide.description}</p>
-
-                <div className="hero-actions">
-                  <Link href="/studios" className="button button-accent">
-                    Explore studios <ArrowIcon />
-                  </Link>
-                  <Link href="/add-studio" className="hero-secondary-link">
-                    Host your space <span>↗</span>
-                  </Link>
                 </div>
-              </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        ) : (
+          <div className="hero-swiper" />
+        )}
 
-              <div className="hero-slide-number">
-                <span>0{index + 1}</span>
-                <span className="hero-number-line" />
-                <span>03</span>
-              </div>
-            </div>
-          </div>
-        </SwiperSlide>
-      ))}
-    </Swiper>
-  ) : (
-    <div className="hero-swiper" />
-  )}
-
-  <div className="hero-bottom-note">
-    <span>MADE FOR THE MAKERS</span>
-    <span>SCROLL TO EXPLORE ↓</span>
-  </div>
-</section>
+        <div className="hero-bottom-note">
+          <span>MADE FOR THE MAKERS</span>
+          <span>SCROLL TO EXPLORE ↓</span>
+        </div>
+      </section>
 
       {/* INTRO STRIP */}
       <section className="intro-strip">
@@ -525,7 +367,9 @@ useEffect(() => {
           <p>
             A space for every <span>creative possibility.</span>
           </p>
-          <span className="intro-strip-note">DISCOVER · CREATE · SHARE</span>
+          <span className="intro-strip-note">
+            DISCOVER · CREATE · SHARE
+          </span>
         </div>
       </section>
 
@@ -543,7 +387,11 @@ useEffect(() => {
                 brought to life.
               </p>
             </div>
-            <Link href="/studios" className="text-link desktop-section-link">
+
+            <Link
+              href="/studios"
+              className="text-link desktop-section-link"
+            >
               Explore all studios <ArrowIcon />
             </Link>
           </div>
@@ -601,6 +449,7 @@ useEffect(() => {
                 for <span>your kind of work.</span>
               </h2>
             </div>
+
             <p className="heading-aside">
               Every creative project is different.
               Find an environment that fits yours.
@@ -616,12 +465,15 @@ useEffect(() => {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={category.image} alt={category.name} />
+
                 <div className="category-shade" />
                 <span className="category-icon">{category.icon}</span>
+
                 <div className="category-info">
                   <span>{category.description}</span>
                   <h3>{category.name}</h3>
                 </div>
+
                 <span className="category-arrow">
                   <ArrowIcon />
                 </span>
@@ -645,6 +497,7 @@ useEffect(() => {
                 steps to get started.
               </p>
             </div>
+
             <span className="process-side-note">
               LESS SEARCHING.
               <br />
@@ -659,6 +512,7 @@ useEffect(() => {
                   <span className="process-number">{step.number}</span>
                   <span className="process-icon">{step.icon}</span>
                 </div>
+
                 <h3>{step.title}</h3>
                 <p>{step.description}</p>
                 <div className="process-card-line" />
@@ -677,20 +531,25 @@ useEffect(() => {
             alt="Creative studio workspace"
           />
         </div>
+
         <div className="host-content">
           <span className="eyebrow">BUILT FOR CREATORS & HOSTS</span>
+
           <h2>
             Your space could be
             <br />
             someone's <span>next big idea.</span>
           </h2>
+
           <p>
             Have a studio, workshop, or production space? Put it on the map.
             Connect with creators and make more of the space you already have.
           </p>
+
           <Link href="/add-studio" className="button button-accent">
             Host your space <ArrowIcon />
           </Link>
+
           <span className="host-footnote">
             SHARE YOUR SPACE. SUPPORT CREATIVITY.
           </span>
@@ -736,126 +595,14 @@ useEffect(() => {
               <span>worth remembering.</span>
             </h2>
           </div>
+
           <Link href="/studios" className="button button-light">
             Find your studio <ArrowIcon />
           </Link>
         </div>
+
         <div className="final-cta-decoration">S</div>
       </section>
-
-      {/* FOOTER */}
-      <footer className="site-footer">
-        <div className="page-container">
-          <div className="footer-main">
-            <div className="footer-brand-column">
-              <Link href="/" className="brand footer-brand">
-                <span className="brand-icon">
-                  <ApertureIcon />
-                </span>
-                <span>
-                  studio<span className="brand-light">space</span>
-                </span>
-              </Link>
-              <p>
-                A home for creative spaces and the people who bring ideas to.
-              </p>
-              <div className="footer-socials">
-                <a
-                  href="https://www.instagram.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Instagram"
-                >
-                  ig
-                </a>
-                <a
-                  href="https://www.facebook.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Facebook"
-                >
-                  f
-                </a>
-                <a
-                  href="https://x.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="X"
-                >
-                  𝕏
-                </a>
-              </div>
-            </div>
-
-            <div className="footer-column">
-              <h4>Explore</h4>
-              <Link href="/studios">All studios</Link>
-              <Link href="/studios?category=Photo%20Studios">
-                Photo studios
-              </Link>
-              <Link href="/studios?category=Sound%20Stages">
-                Sound stages
-              </Link>
-              <Link href="/studios?category=Podcast%20Rooms">
-                Podcast rooms
-              </Link>
-              <Link href="/studios?category=Music%20Suites">
-                Music suites
-              </Link>
-              <Link href="/studios?category=Art%20Workshops">
-                Art workshops
-              </Link>
-            </div>
-
-            <div className="footer-column">
-              <h4>StudioSpace</h4>
-              <a href="#about">About us</a>
-              <a href="#how-it-works">How it works</a>
-              <Link href="/login">Log in</Link>
-              <Link href="/register">Create an account</Link>
-              <Link href="/add-studio">Host your space</Link>
-            </div>
-
-            <div className="footer-newsletter">
-              <h4>Stay in the creative loop.</h4>
-              <p>
-                Get inspiration and updates from the StudioSpace community.
-              </p>
-              <form
-                className="newsletter-form"
-                onSubmit={(event) => event.preventDefault()}
-              >
-                <label className="sr-only" htmlFor="newsletter-email">
-                  Email address
-                </label>
-                <input
-                  id="newsletter-email"
-                  type="email"
-                  placeholder="Your email address"
-                  required
-                />
-                <button type="submit" aria-label="Subscribe">
-                  <ArrowIcon />
-                </button>
-              </form>
-              <span className="newsletter-note">
-                No spam. Just good creative energy.
-              </span>
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <span>
-              © 2026 StudioSpace. All rights reserved.
-            </span>
-            <span>MADE FOR THE MAKERS.</span>
-            <div>
-              <a href="#about">Terms</a>
-              <a href="#about">Privacy</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }
