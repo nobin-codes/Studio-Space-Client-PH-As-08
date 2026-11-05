@@ -42,6 +42,24 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+if (!name.trim() || !email.trim() || !password) {
+  toast.error("Please fill in all required fields.");
+  return;
+}
+
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+  toast.error("Please enter a valid email address.");
+  return;
+}
+
+if (
+  photoURL.trim() &&
+  !/^https?:\/\/.+/i.test(photoURL.trim())
+) {
+  toast.error("Please enter a valid profile photo URL.");
+  return;
+}
+
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters.");
       return;
@@ -252,7 +270,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        <form onSubmit={handleRegister}>
+        <form onSubmit={handleRegister} noValidate>
           <div style={{ marginBottom: "19px" }}>
             <label htmlFor="name" style={labelStyle}>
               Full name

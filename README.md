@@ -2,7 +2,7 @@
 
 **A Peer-to-Peer Creative Workspace & Production Studio Sharing Platform**
 
-StudioSpace connects creators, photographers, filmmakers, podcasters, and other creative professionals with spaces they can book for their projects. Studio owners can list their workspaces, while users can explore available studios and manage their bookings.
+StudioSpace connects creators, photographers, filmmakers, podcasters, and creative professionals with spaces they can book for their projects. Studio owners can list their workspaces, while users can explore studios and manage their bookings.
 
 ## Live Website
 
@@ -15,83 +15,122 @@ https://studio-space-nu.vercel.app/
 - **Studio Listings:** Authenticated users can create, update, and manage their studio listings.
 - **Booking System:** Request bookings for available creative workspaces.
 - **Booking Management:** View booking history and manage booking statuses.
-- **Authentication:** Secure user authentication with Better Auth and Google OAuth.
-- **Responsive Design:** User-friendly interface for desktop, tablet, and mobile devices.
-- **Notifications:** Clear feedback for important user actions.
+- **Authentication:** User authentication with Better Auth and Google OAuth.
+- **Booking Protection:** Prevent overlapping bookings for confirmed reservations.
+- **Responsive Design:** Interface designed for desktop, tablet, and mobile devices.
+- **Notifications:** User feedback through toast notifications and custom confirmation dialogs.
 
 ## Technology Stack
 
-**Frontend**
-- Next.js
-- React
+### Frontend
+- Next.js 16
+- React 19
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS 4
 - Better Auth
 - Sonner
 - Swiper
 - Lucide React
 
-**Backend**
+### Backend
 - Node.js
-- Express.js
+- Express.js 5
 - TypeScript
 - MongoDB
 - Better Auth
 
-**Deployment**
+### Deployment
 - Frontend: Vercel
 - Backend: Render
 - Database: MongoDB Atlas
 
 ## Run Locally
 
-### 1. Clone the repository
+### Prerequisites
+
+- Node.js
+- npm
+- MongoDB database
+- Google OAuth credentials (if using Google login)
+
+### 1. Clone the frontend repository
 
 ```bash
 git clone https://github.com/nobin-codes/Studio-Space-Client-PH-As-08.git
 cd Studio-Space-Client-PH-As-08
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
 ```
 
-### 3. Configure environment variables
+### 2. Configure frontend environment variables
 
-Create a `.env.local` file in the client root directory:
+Create a `.env.local` file in the frontend root:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-Use your local backend URL if it runs on a different port.
-
-### 4. Start the development server
+### 3. Start the frontend
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Frontend runs at:
 
-## Backend Repository
+http://localhost:3000
 
+### 4. Clone the backend repository
+
+Open another terminal:
+
+```bash
+git clone https://github.com/nobin-codes/Studio-Space-Server-PH-As-08.git
+cd Studio-Space-Server-PH-As-08
+npm install
+```
+
+### 5. Configure backend environment variables
+
+Create a `.env` file in the backend root:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+DB_NAME=your_database_name
+BETTER_AUTH_SECRET=your_better_auth_secret
+BETTER_AUTH_URL=http://localhost:5000
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+Replace the example values with your own configuration. Never commit real credentials or secrets to GitHub.
+
+### 6. Build and start the backend
+
+```bash
+npm run build
+npm start
+```
+
+Backend runs at:
+
+http://localhost:5000
+
+## Repositories
+
+**Frontend Repository:**  
+https://github.com/nobin-codes/Studio-Space-Client-PH-As-08
+
+**Backend Repository:**  
 https://github.com/nobin-codes/Studio-Space-Server-PH-As-08
 
 ## Live Backend API
 
 https://studio-space-server-w8v0.onrender.com
 
-## Test Account
+## Getting Started
 
-For evaluation, use the following account:
-
-- **Email:** studiospace.test@example.com
-- **Password:** [Add the test account password here]
-
-You can also register a new account through the website.
+Users can create an account through the website and start exploring creative workspaces. Studio owners can register, publish their studios, and manage incoming bookings.
 
 ## Project Purpose
 

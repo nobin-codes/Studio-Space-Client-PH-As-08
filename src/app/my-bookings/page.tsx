@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   CalendarDays,
   Clock,
   MapPin,
@@ -12,7 +13,9 @@ import {
   LoaderCircle,
   Ticket,
   XCircle,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
 type Booking = {
@@ -71,14 +74,21 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isPending) return;
 
     if (!session?.user?.email) {
+      setBookings([]);
       setLoading(false);
       return;
     }
+
+    const controller = new AbortController();
 
     const fetchBookings = async () => {
       try {
@@ -92,10 +102,13 @@ export default function MyBookingsPage() {
         }
 
         const response = await fetch(
-          `${apiUrl}/api/bookings/my-bookings?email=${encodeURIComponent(session.user.email)}`,
+          `${apiUrl}/api/bookings/my-bookings?email=${encodeURIComponent(
+            session.user.email
+          )}`,
           {
             method: "GET",
             credentials: "include",
+            signal: controller.signal,
           }
         );
 
@@ -107,25 +120,30 @@ export default function MyBookingsPage() {
 
         setBookings(Array.isArray(result.data) ? result.data : []);
       } catch (err) {
-        setError(
+        if (err instanceof Error && err.name === "AbortError") return;
+
+        const message =
           err instanceof Error
             ? err.message
-            : "Something went wrong. Please try again."
-        );
+            : "Something went wrong. Please try again.";
+
+        setError(message);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchBookings();
+
+    return () => {
+      controller.abort();
+    };
   }, [session?.user?.email, isPending]);
 
   const handleCancelBooking = async (id: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this booking?"
-    );
-
-    if (!confirmed) return;
+    if (cancellingId) return;
 
     try {
       setCancellingId(id);
@@ -136,13 +154,10 @@ export default function MyBookingsPage() {
         throw new Error("API URL is not configured.");
       }
 
-      const response = await fetch(
-        `${apiUrl}/api/bookings/${id}/cancel`,
-        {
-          method: "PATCH",
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/bookings/${id}/cancel`, {
+        method: "PATCH",
+        credentials: "include",
+      });
 
       const result = await response.json();
 
@@ -157,12 +172,14 @@ export default function MyBookingsPage() {
             : booking
         )
       );
+
+      setCancelTarget(null);
+      toast.success("Booking cancelled successfully.");
     } catch (err) {
-      window.alert(
-        err instanceof Error
-          ? err.message
-          : "Unable to cancel booking."
-      );
+      const message =
+        err instanceof Error ? err.message : "Unable to cancel booking.";
+
+      toast.error(message);
     } finally {
       setCancellingId("");
     }
@@ -199,176 +216,247 @@ export default function MyBookingsPage() {
   ).length;
 
   return (
-    <main style={styles.page}>
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <div>
-            <p style={styles.eyebrow}>YOUR ACTIVITY</p>
-            <h1 style={styles.title}>My Bookings</h1>
-            <p style={styles.subtitle}>
-              Keep track of the studios you have booked.
-            </p>
-          </div>
-
-          <Link href="/studios" style={styles.primaryButton}>
-            Explore Studios
-          </Link>
-        </div>
-
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <CalendarCheck size={22} color="#a78bfa" />
+    <>
+      <main style={styles.page}>
+        <div style={styles.container}>
+          <div style={styles.header}>
             <div>
-              <p style={styles.statNumber}>{bookings.length}</p>
-              <p style={styles.statLabel}>Total bookings</p>
+              <p style={styles.eyebrow}>YOUR ACTIVITY</p>
+              <h1 style={styles.title}>My Bookings</h1>
+              <p style={styles.subtitle}>
+                Keep track of the studios you have booked.
+              </p>
             </div>
-          </div>
 
-          <div style={styles.statCard}>
-            <CalendarDays size={22} color="#34d399" />
-            <div>
-              <p style={styles.statNumber}>{confirmedCount}</p>
-              <p style={styles.statLabel}>Confirmed</p>
-            </div>
-          </div>
-
-          <div style={styles.statCard}>
-            <Clock size={22} color="#fbbf24" />
-            <div>
-              <p style={styles.statNumber}>{pendingCount}</p>
-              <p style={styles.statLabel}>Pending</p>
-            </div>
-          </div>
-        </div>
-
-        <div style={styles.sectionHeader}>
-          <h2 style={styles.sectionTitle}>Booking History</h2>
-          <span style={styles.count}>{bookings.length} bookings</span>
-        </div>
-
-        {error ? (
-          <div style={styles.emptyCard}>
-            <p style={{ color: "#fca5a5" }}>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              style={styles.secondaryButton}
-            >
-              Try Again
-            </button>
-          </div>
-        ) : bookings.length === 0 ? (
-          <div style={styles.emptyCard}>
-            <div style={styles.emptyIcon}>
-              <CalendarDays size={30} color="#a78bfa" />
-            </div>
-            <h3 style={styles.emptyTitle}>No bookings yet</h3>
-            <p style={styles.muted}>
-              Your studio bookings will appear here once you make a reservation.
-            </p>
             <Link href="/studios" style={styles.primaryButton}>
-              Find a Studio
+              Explore Studios
             </Link>
           </div>
-        ) : (
-          <div style={styles.bookingList}>
-            {bookings.map((booking, index) => {
-              const id = getBookingId(booking);
 
-              return (
-                <article key={id || index} style={styles.bookingCard}>
-                  <div style={styles.bookingTop}>
-                    <div>
-                      <h3 style={styles.bookingTitle}>
-                        {booking.studioTitle || "Studio Booking"}
-                      </h3>
-                      <p style={styles.bookingId}>
-                        Booking ID: {id || "Not available"}
-                      </p>
-                    </div>
+          <div style={styles.statsGrid}>
+            <div style={styles.statCard}>
+              <CalendarCheck size={22} color="#a78bfa" />
+              <div>
+                <p style={styles.statNumber}>{bookings.length}</p>
+                <p style={styles.statLabel}>Total bookings</p>
+              </div>
+            </div>
 
-                    <span
-                      style={{
-                        ...styles.status,
-                        ...getStatusStyle(booking.status),
-                      }}
-                    >
-                      {booking.status || "Unknown"}
-                    </span>
-                  </div>
+            <div style={styles.statCard}>
+              <CalendarDays size={22} color="#34d399" />
+              <div>
+                <p style={styles.statNumber}>{confirmedCount}</p>
+                <p style={styles.statLabel}>Confirmed</p>
+              </div>
+            </div>
 
-                  <div style={styles.detailsGrid}>
-                    <div style={styles.detail}>
-                      <CalendarDays size={17} color="#a78bfa" />
-                      <span>{formatDate(booking.bookingDate)}</span>
-                    </div>
-
-                    <div style={styles.detail}>
-                      <Clock size={17} color="#a78bfa" />
-                      <span>
-                        {booking.startTime || "N/A"}
-                        {booking.endTime ? ` - ${booking.endTime}` : ""}
-                      </span>
-                    </div>
-
-                    <div style={styles.detail}>
-                      <MapPin size={17} color="#a78bfa" />
-                      <span>
-                        {booking.studioLocation || "Location not available"}
-                      </span>
-                    </div>
-
-                    <div style={styles.detail}>
-                      <Users size={17} color="#a78bfa" />
-                      <span>Studio reservation</span>
-                    </div>
-                  </div>
-
-                  <div style={styles.bookingBottom}>
-                    <div>
-                      <p style={styles.priceLabel}>Total amount</p>
-                      <p style={styles.price}>
-                        {typeof booking.totalPrice === "number"
-                          ? `$${booking.totalPrice.toFixed(2)}`
-                          : "Not available"}
-                      </p>
-                    </div>
-
-                    <div style={styles.actions}>
-                      {booking.studioId && (
-                        <Link
-                          href={`/studios/${booking.studioId}`}
-                          style={styles.secondaryButton}
-                        >
-                          View Studio
-                        </Link>
-                      )}
-
-                      {booking.status === "Pending" && id && (
-                        <button
-                          onClick={() => handleCancelBooking(id)}
-                          disabled={cancellingId === id}
-                          style={{
-                            ...styles.cancelButton,
-                            opacity: cancellingId === id ? 0.6 : 1,
-                          }}
-                        >
-                          {cancellingId === id ? (
-                            <LoaderCircle size={15} className="animate-spin" />
-                          ) : (
-                            <XCircle size={15} />
-                          )}
-                          Cancel Booking
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            <div style={styles.statCard}>
+              <Clock size={22} color="#fbbf24" />
+              <div>
+                <p style={styles.statNumber}>{pendingCount}</p>
+                <p style={styles.statLabel}>Pending</p>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-    </main>
+
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>Booking History</h2>
+            <span style={styles.count}>{bookings.length} bookings</span>
+          </div>
+
+          {error ? (
+            <div style={styles.emptyCard}>
+              <p style={{ color: "#fca5a5" }}>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                style={styles.secondaryButton}
+              >
+                Try Again
+              </button>
+            </div>
+          ) : bookings.length === 0 ? (
+            <div style={styles.emptyCard}>
+              <div style={styles.emptyIcon}>
+                <CalendarDays size={30} color="#a78bfa" />
+              </div>
+              <h3 style={styles.emptyTitle}>No bookings yet</h3>
+              <p style={styles.muted}>
+                Your studio bookings will appear here once you make a reservation.
+              </p>
+              <Link href="/studios" style={styles.primaryButton}>
+                Find a Studio
+              </Link>
+            </div>
+          ) : (
+            <div style={styles.bookingList}>
+              {bookings.map((booking, index) => {
+                const id = getBookingId(booking);
+
+                return (
+                  <article key={id || index} style={styles.bookingCard}>
+                    <div style={styles.bookingTop}>
+                      <div>
+                        <h3 style={styles.bookingTitle}>
+                          {booking.studioTitle || "Studio Booking"}
+                        </h3>
+                        <p style={styles.bookingId}>
+                          Booking ID: {id || "Not available"}
+                        </p>
+                      </div>
+
+                      <span
+                        style={{
+                          ...styles.status,
+                          ...getStatusStyle(booking.status),
+                        }}
+                      >
+                        {booking.status || "Unknown"}
+                      </span>
+                    </div>
+
+                    <div style={styles.detailsGrid}>
+                      <div style={styles.detail}>
+                        <CalendarDays size={17} color="#a78bfa" />
+                        <span>{formatDate(booking.bookingDate)}</span>
+                      </div>
+
+                      <div style={styles.detail}>
+                        <Clock size={17} color="#a78bfa" />
+                        <span>
+                          {booking.startTime || "N/A"}
+                          {booking.endTime ? ` - ${booking.endTime}` : ""}
+                        </span>
+                      </div>
+
+                      <div style={styles.detail}>
+                        <MapPin size={17} color="#a78bfa" />
+                        <span>
+                          {booking.studioLocation || "Location not available"}
+                        </span>
+                      </div>
+
+                      <div style={styles.detail}>
+                        <Users size={17} color="#a78bfa" />
+                        <span>Studio reservation</span>
+                      </div>
+                    </div>
+
+                    <div style={styles.bookingBottom}>
+                      <div>
+                        <p style={styles.priceLabel}>Total amount</p>
+                        <p style={styles.price}>
+                          {typeof booking.totalPrice === "number"
+                            ? `$${booking.totalPrice.toFixed(2)}`
+                            : "Not available"}
+                        </p>
+                      </div>
+
+                      <div style={styles.actions}>
+                        {booking.studioId && (
+                          <Link
+                            href={`/studios/${booking.studioId}`}
+                            style={styles.secondaryButton}
+                          >
+                            View Studio
+                          </Link>
+                        )}
+
+                        {booking.status === "Pending" && id && (
+                          <button
+                            onClick={() =>
+                              setCancelTarget({
+                                id,
+                                title: booking.studioTitle || "this studio",
+                              })
+                            }
+                            disabled={Boolean(cancellingId)}
+                            style={{
+                              ...styles.cancelButton,
+                              opacity: cancellingId ? 0.6 : 1,
+                            }}
+                          >
+                            <XCircle size={15} />
+                            Cancel Booking
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {cancelTarget && (
+        <div
+          onClick={() => {
+            if (!cancellingId) setCancelTarget(null);
+          }}
+          style={styles.modalOverlay}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-dialog-title"
+            onClick={(event) => event.stopPropagation()}
+            style={styles.modal}
+          >
+            <div style={styles.modalHeader}>
+              <div style={styles.modalIcon}>
+                <AlertTriangle size={24} />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCancelTarget(null)}
+                disabled={Boolean(cancellingId)}
+                aria-label="Close confirmation dialog"
+                style={styles.closeButton}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <h2 id="cancel-dialog-title" style={styles.modalTitle}>
+              Cancel this booking?
+            </h2>
+
+            <p style={styles.modalDescription}>
+              Are you sure you want to cancel your booking for{" "}
+              <strong style={{ color: "#ffffff" }}>
+                {cancelTarget.title}
+              </strong>
+              ?
+            </p>
+
+            <div style={styles.modalActions}>
+              <button
+                type="button"
+                onClick={() => setCancelTarget(null)}
+                disabled={Boolean(cancellingId)}
+                style={styles.keepButton}
+              >
+                Keep Booking
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleCancelBooking(cancelTarget.id)}
+                disabled={Boolean(cancellingId)}
+                style={{
+                  ...styles.confirmCancelButton,
+                  opacity: cancellingId ? 0.7 : 1,
+                }}
+              >
+                {cancellingId ? "Cancelling..." : "Yes, Cancel"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -615,5 +703,88 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "24px",
     fontWeight: 800,
     margin: 0,
+  },
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 1000,
+    display: "grid",
+    placeItems: "center",
+    padding: "20px",
+    background: "rgba(0,0,0,0.75)",
+    backdropFilter: "blur(7px)",
+  },
+  modal: {
+    width: "100%",
+    maxWidth: "420px",
+    padding: "28px",
+    border: "1px solid #49345e",
+    borderRadius: "20px",
+    background: "#17111f",
+    color: "#ffffff",
+    boxShadow: "0 25px 80px rgba(0,0,0,0.5)",
+  },
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "22px",
+  },
+  modalIcon: {
+    width: "48px",
+    height: "48px",
+    display: "grid",
+    placeItems: "center",
+    borderRadius: "14px",
+    background: "rgba(239,68,68,0.12)",
+    color: "#ff8999",
+  },
+  closeButton: {
+    width: "36px",
+    height: "36px",
+    display: "grid",
+    placeItems: "center",
+    border: "1px solid #40334c",
+    borderRadius: "10px",
+    background: "transparent",
+    color: "#b9adca",
+    cursor: "pointer",
+  },
+  modalTitle: {
+    margin: "0 0 10px",
+    fontSize: "21px",
+    fontWeight: 800,
+  },
+  modalDescription: {
+    margin: "0 0 25px",
+    color: "#b9adca",
+    fontSize: "13px",
+    lineHeight: 1.7,
+  },
+  modalActions: {
+    display: "flex",
+    gap: "12px",
+  },
+  keepButton: {
+    flex: 1,
+    padding: "12px",
+    border: "1px solid #493b57",
+    borderRadius: "10px",
+    background: "#241b2e",
+    color: "#e5d8f6",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  confirmCancelButton: {
+    flex: 1,
+    padding: "12px",
+    border: "1px solid #a83f55",
+    borderRadius: "10px",
+    background: "#a8324b",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
   },
 };
