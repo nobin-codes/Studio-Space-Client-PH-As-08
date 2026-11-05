@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense } from "react";
@@ -14,7 +15,10 @@ function SiteShellContent({
   const pathname = usePathname();
 
   const hideSharedLayout =
-    pathname === "/dashboard" || pathname === "/studios";
+    pathname === "/dashboard" ||
+    pathname === "/studios" ||
+    pathname === "/login" ||
+    pathname === "/register";
 
   if (hideSharedLayout) {
     return <>{children}</>;
