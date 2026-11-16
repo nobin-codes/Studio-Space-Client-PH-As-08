@@ -95,11 +95,9 @@ export default function MyBookingsPage() {
         setLoading(true);
         setError("");
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-        if (!apiUrl) {
-          throw new Error("API URL is not configured.");
-        }
+        const apiUrl = (
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+        ).replace(/\/+$/, "");
 
         const response = await fetch(
           `${apiUrl}/api/bookings/my-bookings?email=${encodeURIComponent(
@@ -148,11 +146,9 @@ export default function MyBookingsPage() {
     try {
       setCancellingId(id);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-      if (!apiUrl) {
-        throw new Error("API URL is not configured.");
-      }
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      ).replace(/\/+$/, "");
 
       const response = await fetch(`${apiUrl}/api/bookings/${id}/cancel`, {
         method: "PATCH",

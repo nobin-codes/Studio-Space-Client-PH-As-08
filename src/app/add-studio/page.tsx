@@ -22,6 +22,7 @@ import {
 const categories = [
   "Photo Studios",
   "Film Stages",
+  "Sound Stages",
   "Podcast Rooms",
   "Music Suites",
   "Art Workshops",
@@ -122,6 +123,11 @@ export default function AddStudioPage() {
 
     if (!formData.title.trim() || !formData.location.trim()) {
       toast.error("Please complete all required fields.");
+      return;
+    }
+
+    if (formData.overview.trim().length < 10) {
+      toast.error("Studio overview must be between 10 and 3000 characters.");
       return;
     }
 

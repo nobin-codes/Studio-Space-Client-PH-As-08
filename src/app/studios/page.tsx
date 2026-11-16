@@ -2,7 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -33,8 +34,9 @@ const categories = [
   "Art Workshops",
 ];
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900";
@@ -83,7 +85,8 @@ function getStudiosFromResponse(result: unknown): Studio[] {
   return [];
 }
 
-export default function ExploreStudiosPage() {
+function ExploreStudiosContent() {
+  const searchParams = useSearchParams();
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -140,25 +143,24 @@ export default function ExploreStudiosPage() {
     };
   }, [fetchStudios]);
 
-  // Read the selected category from the homepage URL.
+  // Read the selected category from the URL.
+  const categoryParam = searchParams.get("category");
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const selectedCategory = params.get("category");
-
-    if (!selectedCategory) {
+    if (!categoryParam) {
+      setCategory("All Studios");
       return;
     }
 
     const matchedCategory = categories.find(
       (item) =>
         item !== "All Studios" &&
-        normalizeCategory(item) === normalizeCategory(selectedCategory)
+        normalizeCategory(item) === normalizeCategory(categoryParam)
     );
 
     if (matchedCategory) {
       setCategory(matchedCategory);
     }
-  }, []);
+  }, [categoryParam]);
 
   // Keep the URL updated when the user changes category.
   const handleCategoryChange = (selectedCategory: string) => {
@@ -692,7 +694,7 @@ export default function ExploreStudiosPage() {
         © 2026 StudioSpace. All rights reserved.
       </footer>
 
-      <style jsx global>{`
+      <style>{`
         @keyframes studioSpaceSpin {
           to {
             transform: rotate(360deg);
@@ -715,6 +717,35 @@ export default function ExploreStudiosPage() {
         }
       `}</style>
     </main>
+  );
+}
+
+export default function ExploreStudiosPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            background: "#f8f7f4",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={messageStyle}>
+            <LoaderCircle
+              size={35}
+              color="#81965f"
+              className="animate-spin"
+            />
+            <p>Loading studios...</p>
+          </div>
+        </main>
+      }
+    >
+      <ExploreStudiosContent />
+    </Suspense>
   );
 }
 

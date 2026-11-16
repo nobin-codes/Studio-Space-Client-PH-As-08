@@ -30,7 +30,12 @@ type Studio = {
   maxCapacity: number;
   ownerEmail?: string;
   hostEmail?: string;
+  ownerId?: string;
 };
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 function getStudioId(studio: Studio) {
   return studio._id || studio.id || "";
@@ -69,13 +74,13 @@ export default function MyListingsPage() {
   } | null>(null);
 
   const fetchListings = useCallback(async () => {
-    if (!session?.user.email) return;
+    if (!session?.user?.email) return;
 
     setLoading(true);
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/studios`,
+        `${API_URL}/api/studios`,
         { credentials: "include" }
       );
 
@@ -88,7 +93,15 @@ export default function MyListingsPage() {
 
       const myStudios = allStudios.filter((studio) => {
         const email = studio.ownerEmail || studio.hostEmail;
-        return email?.toLowerCase() === session.user.email.toLowerCase();
+        const matchesEmail =
+          email &&
+          session.user.email &&
+          email.toLowerCase() === session.user.email.toLowerCase();
+        const matchesOwnerId =
+          studio.ownerId &&
+          session.user.id &&
+          studio.ownerId === session.user.id;
+        return Boolean(matchesEmail || matchesOwnerId);
       });
 
       setStudios(myStudios);
@@ -99,7 +112,7 @@ export default function MyListingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [session?.user.email]);
+  }, [session?.user?.email, session?.user?.id]);
 
   useEffect(() => {
     if (!isPending && session) {
@@ -130,7 +143,7 @@ export default function MyListingsPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/studios/${id}`,
+        `${API_URL}/api/studios/${id}`,
         {
           method: "DELETE",
           credentials: "include",

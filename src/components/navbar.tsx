@@ -150,6 +150,7 @@ export default function Navbar() {
   };
 
   const isActive = (href: string) => {
+    if (!pathname) return false;
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
@@ -223,7 +224,7 @@ export default function Navbar() {
                   setProfileMenuOpen((previous) => !previous);
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center gap-3 rounded-full border border-white/15 px-3 py-2 text-sm text-white transition hover:bg-white/5"
+                className="flex items-center gap-3 rounded-full border border-[#181916]/15 bg-[#181916]/5 px-3 py-2 text-sm text-[#181916] transition hover:bg-[#181916]/10"
                 aria-expanded={profileMenuOpen}
                 aria-haspopup="menu"
                 aria-label="Open profile menu"
@@ -236,12 +237,12 @@ export default function Navbar() {
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 font-bold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 font-bold text-white">
                     {user.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 )}
 
-                <span className="max-w-32 truncate">
+                <span className="max-w-32 truncate font-semibold">
                   {user.name || "My Account"}
                 </span>
 

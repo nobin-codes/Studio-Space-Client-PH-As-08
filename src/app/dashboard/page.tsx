@@ -16,6 +16,7 @@ import {
   X,
   ArrowRight,
   UserRound,
+  LoaderCircle,
 } from "lucide-react";
 
 const navigation = [
@@ -58,7 +59,7 @@ export default function DashboardPage() {
   if (isPending) {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f8f8fc" }}>
-        <span className="loading loading-spinner loading-lg" style={{ color: "#6d28d9" }} />
+        <LoaderCircle size={38} className="animate-spin" style={{ color: "#6d28d9" }} />
       </main>
     );
   }

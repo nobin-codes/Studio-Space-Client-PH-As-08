@@ -24,6 +24,7 @@ import {
 const categories = [
   "Photo Studios",
   "Film Stages",
+  "Sound Stages",
   "Podcast Rooms",
   "Music Suites",
   "Art Workshops",
@@ -152,11 +153,10 @@ function EditStudioContent() {
     useState<StudioFormData>(initialFormData);
 
   useEffect(() => {
-    const studioId = params.id;
+    const rawId = params?.id;
+    const studioId = Array.isArray(rawId) ? rawId[0] : rawId;
 
     if (!studioId) {
-      toast.error("Invalid studio ID.");
-      setLoading(false);
       return;
     }
 
@@ -261,6 +261,11 @@ function EditStudioContent() {
       !formData.imageUrl.trim()
     ) {
       toast.error("Please complete all required fields.");
+      return;
+    }
+
+    if (formData.overview.trim().length < 10) {
+      toast.error("Studio overview must be between 10 and 3000 characters.");
       return;
     }
 
@@ -774,7 +779,7 @@ function EditStudioContent() {
         </p>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @keyframes spin {
           to {
             transform: rotate(360deg);

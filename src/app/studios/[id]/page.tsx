@@ -108,25 +108,22 @@ function extractStudio(data: unknown): Studio | null {
   }
 
   const result = data as Record<string, unknown>;
+  const candidate =
+    (result.data && typeof result.data === "object"
+      ? (result.data as Record<string, unknown>).studio || result.data
+      : null) ||
+    result.studio ||
+    result;
 
-  if (result._id && typeof result._id === "string") {
-    return result as unknown as Studio;
-  }
+  if (!candidate || typeof candidate !== "object") return null;
 
-  if (result.data && typeof result.data === "object") {
-    const nested = result.data as Record<string, unknown>;
-
-    if (nested._id && typeof nested._id === "string") {
-      return nested as unknown as Studio;
-    }
-
-    if (nested.studio && typeof nested.studio === "object") {
-      return nested.studio as Studio;
-    }
-  }
-
-  if (result.studio && typeof result.studio === "object") {
-    return result.studio as Studio;
+  const rawCandidate = candidate as Record<string, unknown>;
+  const id = rawCandidate._id || rawCandidate.id;
+  if (id) {
+    return {
+      ...rawCandidate,
+      _id: String(id),
+    } as unknown as Studio;
   }
 
   return null;
@@ -171,7 +168,10 @@ function StudioDetailsPageContent() {
 
   const [today, setToday] = useState("");
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
     setToday(getLocalDate());
   }, []);
 
@@ -200,13 +200,10 @@ function StudioDetailsPageContent() {
   }, [bookingModalOpen]);
 
   useEffect(() => {
-    const studioId = params.id;
+    const rawId = params?.id;
+    const studioId = Array.isArray(rawId) ? rawId[0] : rawId;
 
     if (!studioId) {
-      setError("Invalid studio ID.");
-
-      setLoading(false);
-
       return;
     }
 
@@ -462,23 +459,31 @@ function StudioDetailsPageContent() {
         <div className="studio-details-layout" style={layoutStyle}>
           <section style={{ minWidth: 0 }}>
             <div style={imageContainerStyle}>
-              <Swiper
-                modules={[Pagination]}
-                pagination={{
-                  clickable: true,
-                }}
-                className="studio-gallery-swiper"
-              >
-                {images.map((photo, index) => (
-                  <SwiperSlide key={`${photo}-${index}`}>
-                    <img
-                      src={photo}
-                      alt={`${studio.title}, image ${index + 1}`}
-                      style={imageStyle}
-                    />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+              {isMounted ? (
+                <Swiper
+                  modules={[Pagination]}
+                  pagination={{
+                    clickable: true,
+                  }}
+                  className="studio-gallery-swiper"
+                >
+                  {images.map((photo, index) => (
+                    <SwiperSlide key={`${photo}-${index}`}>
+                      <img
+                        src={photo}
+                        alt={`${studio.title}, image ${index + 1}`}
+                        style={imageStyle}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              ) : (
+                <img
+                  src={images[0]}
+                  alt={studio.title}
+                  style={imageStyle}
+                />
+              )}
 
               {images.length > 1 && (
                 <span style={galleryCountStyle}>{images.length} photos</span>
@@ -855,7 +860,7 @@ function StudioDetailsPageContent() {
         )}
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @keyframes spin {
           to {
             transform: rotate(360deg);

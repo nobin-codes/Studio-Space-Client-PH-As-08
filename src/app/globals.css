@@ -6,10 +6,12 @@
   --background: #f8f7f4;
   --foreground: #181916;
   --muted: #777970;
+  --muted-foreground: #777970;
   --accent: #d9fa70;
   --dark: #181b18;
   --surface: #ffffff;
   --line: #e8e7e1;
+  --border: #e8e7e1;
 }
 
 * {

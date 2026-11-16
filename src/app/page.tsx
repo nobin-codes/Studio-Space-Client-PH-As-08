@@ -20,7 +20,9 @@ type Studio = {
   rating?: number;
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 const slides = [
   {
@@ -540,7 +542,7 @@ export default function Home() {
           <h2>
             Your space could be
             <br />
-            someone's <span>next big idea.</span>
+            someone&apos;s <span>next big idea.</span>
           </h2>
 
           <p>
