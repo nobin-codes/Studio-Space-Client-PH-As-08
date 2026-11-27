@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -38,7 +38,18 @@ function getBookingId(booking: Booking) {
 function formatDate(value = "") {
   if (!value) return "Date not available";
 
-  const date = new Date(value);
+  // The API stores dates as "YYYY-MM-DD". Parsing those through the Date
+  // constructor treats them as UTC midnight, which shows the previous day in
+  // timezones west of UTC, so build a local date instead.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  const date = dateOnly
+    ? new Date(
+        Number(dateOnly[1]),
+        Number(dateOnly[2]) - 1,
+        Number(dateOnly[3])
+      )
+    : new Date(value);
 
   if (Number.isNaN(date.getTime())) return value;
 
@@ -49,8 +60,12 @@ function formatDate(value = "") {
   });
 }
 
+function normalizeStatus(value = "") {
+  return value.trim().toLowerCase();
+}
+
 function getStatusStyle(status = "") {
-  const value = status.toLowerCase();
+  const value = normalizeStatus(status);
 
   if (value === "confirmed") {
     return { background: "#dcfce7", color: "#166534" };
@@ -103,13 +118,22 @@ export default function MyBookingsPage() {
           }
         );
 
-        const result = await response.json();
+        const result: unknown = await response.json().catch(() => null);
+
+        const data =
+          result && typeof result === "object"
+            ? (result as { data?: unknown; message?: unknown })
+            : null;
 
         if (!response.ok) {
-          throw new Error(result.message || "Unable to load your bookings.");
+          throw new Error(
+            typeof data?.message === "string"
+              ? data.message
+              : "Unable to load your bookings."
+          );
         }
 
-        setBookings(Array.isArray(result.data) ? result.data : []);
+        setBookings(Array.isArray(data?.data) ? (data.data as Booking[]) : []);
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
 
@@ -133,6 +157,71 @@ export default function MyBookingsPage() {
     };
   }, [session?.user?.email, isPending]);
 
+  const modalRef = useRef<HTMLElement | null>(null);
+  const cancellingIdRef = useRef(cancellingId);
+
+  useEffect(() => {
+    cancellingIdRef.current = cancellingId;
+  }, [cancellingId]);
+
+  // Keep keyboard focus inside the confirmation dialog and restore it on close.
+  useEffect(() => {
+    if (!cancelTarget) return;
+
+    const modal = modalRef.current;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const getFocusable = () =>
+      modal
+        ? Array.from(
+            modal.querySelectorAll<HTMLElement>(focusableSelector)
+          ).filter((element) => element.offsetParent !== null)
+        : [];
+
+    getFocusable()[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (!cancellingIdRef.current) {
+          setCancelTarget(null);
+        }
+
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusable = getFocusable();
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [cancelTarget]);
+
   const handleCancelBooking = async (id: string) => {
     if (cancellingId) return;
 
@@ -148,10 +237,17 @@ export default function MyBookingsPage() {
         credentials: "include",
       });
 
-      const result = await response.json();
+      const result: unknown = await response.json().catch(() => null);
+
+      const message =
+        result &&
+        typeof result === "object" &&
+        typeof (result as { message?: unknown }).message === "string"
+          ? (result as { message: string }).message
+          : "";
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to cancel booking.");
+        throw new Error(message || "Failed to cancel booking.");
       }
 
       setBookings((previous) =>
@@ -206,11 +302,11 @@ export default function MyBookingsPage() {
   }
 
   const confirmedCount = bookings.filter(
-    (booking) => booking.status === "Confirmed"
+    (booking) => normalizeStatus(booking.status) === "confirmed"
   ).length;
 
   const pendingCount = bookings.filter(
-    (booking) => booking.status === "Pending"
+    (booking) => normalizeStatus(booking.status) === "pending"
   ).length;
 
   return (
@@ -359,24 +455,26 @@ export default function MyBookingsPage() {
                           </Link>
                         )}
 
-                        {booking.status === "Pending" && id && (
-                          <button
-                            onClick={() =>
-                              setCancelTarget({
-                                id,
-                                title: booking.studioTitle || "this studio",
-                              })
-                            }
-                            disabled={Boolean(cancellingId)}
-                            style={{
-                              ...styles.cancelButton,
-                              opacity: cancellingId ? 0.6 : 1,
-                            }}
-                          >
-                            <XCircle size={15} />
-                            Cancel Booking
-                          </button>
-                        )}
+                        {normalizeStatus(booking.status) === "pending" &&
+                          id && (
+                            <button
+                              onClick={() =>
+                                setCancelTarget({
+                                  id,
+                                  title:
+                                    booking.studioTitle || "this studio",
+                                })
+                              }
+                              disabled={Boolean(cancellingId)}
+                              style={{
+                                ...styles.cancelButton,
+                                opacity: cancellingId ? 0.6 : 1,
+                              }}
+                            >
+                              <XCircle size={15} />
+                              Cancel Booking
+                            </button>
+                          )}
                       </div>
                     </div>
                   </article>
@@ -395,6 +493,7 @@ export default function MyBookingsPage() {
           style={styles.modalOverlay}
         >
           <section
+            ref={modalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="cancel-dialog-title"

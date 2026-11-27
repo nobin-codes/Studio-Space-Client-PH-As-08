@@ -300,6 +300,7 @@ function ExploreStudiosContent() {
           </p>
 
           <div
+            className="studio-search"
             style={{
               display: "flex",
               alignItems: "center",
@@ -373,6 +374,7 @@ function ExploreStudiosContent() {
           </div>
 
           <div
+            className="studio-sort"
             style={{
               display: "flex",
               alignItems: "center",
@@ -443,22 +445,24 @@ function ExploreStudiosContent() {
           })}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            margin: "27px 0 22px",
-            color: "#777970",
-            fontSize: 13,
-          }}
-        >
-          <span>
-            <strong style={{ color: "#181916" }}>
-              {filteredStudios.length}
-            </strong>{" "}
-            studios found
-          </span>
-        </div>
+        {!loading && !error && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              margin: "27px 0 22px",
+              color: "#777970",
+              fontSize: 13,
+            }}
+          >
+            <span>
+              <strong style={{ color: "#181916" }}>
+                {filteredStudios.length}
+              </strong>{" "}
+              studios found
+            </span>
+          </div>
+        )}
 
         {/* Loading */}
         {loading && (
@@ -526,7 +530,7 @@ function ExploreStudiosContent() {
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+                "repeat(auto-fill, minmax(min(100%, 260px), 1fr))",
               gap: 25,
             }}
           >
@@ -643,6 +647,12 @@ function ExploreStudiosContent() {
           to {
             transform: rotate(360deg);
           }
+        }
+
+        .studio-search:focus-within,
+        .studio-sort:focus-within {
+          outline: 2px solid #81965f;
+          outline-offset: 2px;
         }
       `}</style>
     </main>
