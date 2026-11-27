@@ -16,7 +16,6 @@ function SiteShellContent({
 
   const hideSharedLayout =
     pathname === "/dashboard" ||
-    pathname === "/studios" ||
     pathname === "/login" ||
     pathname === "/register";
 

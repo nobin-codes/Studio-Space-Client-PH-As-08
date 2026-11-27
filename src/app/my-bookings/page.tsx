@@ -80,19 +80,12 @@ export default function MyBookingsPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (isPending) return;
-
-    if (!session?.user?.email) {
-      setBookings([]);
-      setLoading(false);
-      return;
-    }
+    if (isPending || !session?.user?.email) return;
 
     const controller = new AbortController();
 
     const fetchBookings = async () => {
       try {
-        setLoading(true);
         setError("");
 
         const apiUrl = (
@@ -181,7 +174,7 @@ export default function MyBookingsPage() {
     }
   };
 
-  if (isPending || loading) {
+  if (isPending) {
     return (
       <main style={styles.center}>
         <LoaderCircle size={32} className="animate-spin" color="#a78bfa" />
@@ -199,6 +192,15 @@ export default function MyBookingsPage() {
         <Link href="/login" style={styles.primaryButton}>
           Login
         </Link>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main style={styles.center}>
+        <LoaderCircle size={32} className="animate-spin" color="#a78bfa" />
+        <p style={styles.muted}>Loading your bookings...</p>
       </main>
     );
   }

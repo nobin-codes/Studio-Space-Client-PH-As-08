@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade, Pagination } from "swiper/modules";
 
@@ -252,14 +252,12 @@ function StudioCard({ studio }: { studio: Studio }) {
   );
 }
 
+const emptySubscribe = () => () => {};
+
 export default function Home() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   useEffect(() => {
     const fetchStudios = async () => {

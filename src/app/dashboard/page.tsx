@@ -213,7 +213,7 @@ export default function DashboardPage() {
               </h1>
 
               <p className="mt-2 text-sm" style={{ color: "#64748b" }}>
-                Welcome back, {firstName}. Here's your workspace.
+                Welcome back, {firstName}. Here&apos;s your workspace.
               </p>
             </div>
 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -73,56 +73,63 @@ export default function MyListingsPage() {
     title: string;
   } | null>(null);
 
-  const fetchListings = useCallback(async () => {
-    if (!session?.user?.email) return;
-
-    setLoading(true);
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/studios`,
-        { credentials: "include" }
-      );
-
-      if (!response.ok) {
-        throw new Error("Unable to load studio listings.");
-      }
-
-      const data: unknown = await response.json();
-      const allStudios = extractStudios(data);
-
-      const myStudios = allStudios.filter((studio) => {
-        const email = studio.ownerEmail || studio.hostEmail;
-        const matchesEmail =
-          email &&
-          session.user.email &&
-          email.toLowerCase() === session.user.email.toLowerCase();
-        const matchesOwnerId =
-          studio.ownerId &&
-          session.user.id &&
-          studio.ownerId === session.user.id;
-        return Boolean(matchesEmail || matchesOwnerId);
-      });
-
-      setStudios(myStudios);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.email, session?.user?.id]);
+  const userEmail = session?.user?.email;
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    if (!isPending && session) {
-      void fetchListings();
-    }
+    if (isPending || !userEmail) return;
 
-    if (!isPending && !session) {
-      setLoading(false);
-    }
-  }, [isPending, session, fetchListings]);
+    let active = true;
+
+    const loadMyListings = async () => {
+      try {
+        const response = await fetch(
+          `${API_URL}/api/studios`,
+          { credentials: "include" }
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load studio listings.");
+        }
+
+        const data: unknown = await response.json();
+        const allStudios = extractStudios(data);
+
+        const myStudios = allStudios.filter((studio) => {
+          const email = studio.ownerEmail || studio.hostEmail;
+          const matchesEmail =
+            email &&
+            userEmail &&
+            email.toLowerCase() === userEmail.toLowerCase();
+          const matchesOwnerId =
+            studio.ownerId &&
+            userId &&
+            studio.ownerId === userId;
+          return Boolean(matchesEmail || matchesOwnerId);
+        });
+
+        if (active) {
+          setStudios(myStudios);
+        }
+      } catch (error) {
+        if (active) {
+          toast.error(
+            error instanceof Error ? error.message : "Something went wrong."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadMyListings();
+
+    return () => {
+      active = false;
+    };
+  }, [isPending, userEmail, userId]);
 
   useEffect(() => {
     if (!deleteTarget) return;
@@ -171,7 +178,7 @@ export default function MyListingsPage() {
     }
   };
 
-  if (isPending || loading) {
+  if (isPending) {
     return (
       <main
         style={{
@@ -238,6 +245,35 @@ export default function MyListingsPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "#09070d",
+          color: "#ffffff",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <RefreshCw
+            size={30}
+            style={{
+              color: "#b48aff",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 15px",
+            }}
+          />
+          <p style={{ color: "#b9adca", fontSize: "14px" }}>
+            Loading your listings...
+          </p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <>
       <main
@@ -299,7 +335,7 @@ export default function MyListingsPage() {
                 My Listings
               </h1>
               <p style={{ color: "#a59aaf", fontSize: "14px", marginTop: "9px" }}>
-                Manage the creative spaces you've shared.
+                Manage the creative spaces you&apos;ve shared.
               </p>
             </div>
 

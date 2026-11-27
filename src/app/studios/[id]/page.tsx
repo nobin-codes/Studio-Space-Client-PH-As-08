@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 
 import type { FormEvent } from "react";
 
@@ -32,7 +32,6 @@ import {
   ShieldCheck,
   X,
   Wallet,
-  Wifi,
 } from "lucide-react";
 
 type StudioReview = {
@@ -166,14 +165,13 @@ function StudioDetailsPageContent() {
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
 
-  const [today, setToday] = useState("");
+  const [today] = useState(() => getLocalDate());
 
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    setToday(getLocalDate());
-  }, []);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
     if (!bookingModalOpen) {

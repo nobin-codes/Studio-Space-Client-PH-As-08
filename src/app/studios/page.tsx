@@ -2,8 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -86,15 +86,72 @@ function getStudiosFromResponse(result: unknown): Studio[] {
 }
 
 function ExploreStudiosContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All Studios");
   const [sort, setSort] = useState("default");
 
-  const fetchStudios = useCallback(async (signal?: AbortSignal) => {
+  const categoryParam = searchParams.get("category");
+  const category = useMemo(() => {
+    if (!categoryParam) return "All Studios";
+    const matchedCategory = categories.find(
+      (item) =>
+        item !== "All Studios" &&
+        normalizeCategory(item) === normalizeCategory(categoryParam)
+    );
+    return matchedCategory || "All Studios";
+  }, [categoryParam]);
+
+  // Load studios on mount
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchAllStudios = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/studios`, {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Unable to load studios. Server returned ${response.status}.`
+          );
+        }
+
+        const result: unknown = await response.json();
+        const list = getStudiosFromResponse(result);
+
+        setStudios(list);
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          return;
+        }
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to connect to the StudioSpace server."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchAllStudios();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  const handleRetry = async () => {
     setLoading(true);
     setError("");
 
@@ -102,7 +159,6 @@ function ExploreStudiosContent() {
       const response = await fetch(`${API_URL}/api/studios`, {
         method: "GET",
         cache: "no-store",
-        signal,
       });
 
       if (!response.ok) {
@@ -116,57 +172,18 @@ function ExploreStudiosContent() {
 
       setStudios(list);
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-
       setError(
         err instanceof Error
           ? err.message
           : "Unable to connect to the StudioSpace server."
       );
     } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, []);
+  };
 
-  // Load studios from the server.
-  useEffect(() => {
-    const controller = new AbortController();
-
-    void fetchStudios(controller.signal);
-
-    return () => {
-      controller.abort();
-    };
-  }, [fetchStudios]);
-
-  // Read the selected category from the URL.
-  const categoryParam = searchParams.get("category");
-  useEffect(() => {
-    if (!categoryParam) {
-      setCategory("All Studios");
-      return;
-    }
-
-    const matchedCategory = categories.find(
-      (item) =>
-        item !== "All Studios" &&
-        normalizeCategory(item) === normalizeCategory(categoryParam)
-    );
-
-    if (matchedCategory) {
-      setCategory(matchedCategory);
-    }
-  }, [categoryParam]);
-
-  // Keep the URL updated when the user changes category.
   const handleCategoryChange = (selectedCategory: string) => {
-    setCategory(selectedCategory);
-
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(searchParams.toString());
 
     if (selectedCategory === "All Studios") {
       params.delete("category");
@@ -175,12 +192,9 @@ function ExploreStudiosContent() {
     }
 
     const queryString = params.toString();
+    const newUrl = queryString ? `/studios?${queryString}` : "/studios";
 
-    const newUrl = queryString
-      ? `${window.location.pathname}?${queryString}`
-      : window.location.pathname;
-
-    window.history.replaceState(null, "", newUrl);
+    router.replace(newUrl, { scroll: false });
   };
 
   const filteredStudios = useMemo(() => {
@@ -235,63 +249,6 @@ function ExploreStudiosContent() {
         fontFamily: "DM Sans, sans-serif",
       }}
     >
-      {/* Navigation */}
-      <header
-        style={{
-          minHeight: 76,
-          background: "#fff",
-          borderBottom: "1px solid #e8e7e1",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 20,
-          padding: "16px max(24px, calc((100% - 1200px) / 2))",
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-        }}
-      >
-        <Link
-          href="/"
-          style={{
-            fontSize: 24,
-            fontWeight: 800,
-            letterSpacing: "-1.3px",
-            color: "#181916",
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Studio<span style={{ color: "#81965f" }}>Space.</span>
-        </Link>
-
-        <nav
-          aria-label="Main navigation"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 24,
-            flexWrap: "wrap",
-          }}
-        >
-          <Link href="/" style={navStyle}>
-            Home
-          </Link>
-
-          <Link
-            href="/studios"
-            aria-current="page"
-            style={{ ...navStyle, color: "#81965f" }}
-          >
-            Explore Studios
-          </Link>
-
-          <Link href="/dashboard" style={navStyle}>
-            Dashboard
-          </Link>
-        </nav>
-      </header>
-
       {/* Hero */}
       <section
         style={{
@@ -531,7 +488,7 @@ function ExploreStudiosContent() {
 
             <button
               type="button"
-              onClick={() => void fetchStudios()}
+              onClick={handleRetry}
               style={actionButtonStyle}
             >
               <RefreshCw size={16} />
@@ -681,38 +638,10 @@ function ExploreStudiosContent() {
         )}
       </section>
 
-      {/* Footer */}
-      <footer
-        style={{
-          background: "#191d18",
-          color: "#fff",
-          padding: "30px 24px",
-          textAlign: "center",
-          fontSize: 12,
-        }}
-      >
-        © 2026 StudioSpace. All rights reserved.
-      </footer>
-
       <style>{`
         @keyframes studioSpaceSpin {
           to {
             transform: rotate(360deg);
-          }
-        }
-
-        @media (max-width: 600px) {
-          header {
-            padding-left: 18px !important;
-            padding-right: 18px !important;
-          }
-
-          header nav {
-            gap: 12px !important;
-          }
-
-          header nav a {
-            font-size: 11px !important;
           }
         }
       `}</style>
@@ -748,13 +677,6 @@ export default function ExploreStudiosPage() {
     </Suspense>
   );
 }
-
-const navStyle = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#696b63",
-  textDecoration: "none",
-};
 
 const eyebrowStyle = {
   color: "#81965f",

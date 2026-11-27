@@ -65,11 +65,16 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Close menus when navigating
+  // Close menus on browser back/forward or click outside
   useEffect(() => {
-    setMobileMenuOpen(false);
-    setProfileMenuOpen(false);
-  }, [pathname]);
+    const handlePopState = () => {
+      setMobileMenuOpen(false);
+      setProfileMenuOpen(false);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -207,6 +212,92 @@ export default function Navbar() {
           >
             About us
           </Link>
+
+          {/* Mobile-only menu items */}
+          <div className="mobile-nav-panel">
+            {user ? (
+              <div className="mobile-user-section">
+                <div className="mobile-user-badge">
+                  {user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.image}
+                      alt=""
+                      className="h-9 w-9 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#181916] text-[#d9fa70] font-bold text-sm">
+                      {user.name?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate text-[#181916]">
+                      {user.name || "My Account"}
+                    </p>
+                    <p className="text-xs text-[#777970] truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mobile-user-links">
+                  <Link
+                    href="/dashboard"
+                    onClick={closeMenus}
+                    className="mobile-sublink"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/add-studio"
+                    onClick={closeMenus}
+                    className="mobile-sublink"
+                  >
+                    Add New Studio
+                  </Link>
+                  <Link
+                    href="/my-listings"
+                    onClick={closeMenus}
+                    className="mobile-sublink"
+                  >
+                    My Studio Listings
+                  </Link>
+                  <Link
+                    href="/my-bookings"
+                    onClick={closeMenus}
+                    className="mobile-sublink"
+                  >
+                    My Bookings
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="mobile-sublink mobile-logout-btn"
+                  >
+                    {loggingOut ? "Logging out..." : "Log out"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mobile-auth-actions">
+                <Link
+                  href="/login"
+                  onClick={closeMenus}
+                  className="button button-outline mobile-btn"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={closeMenus}
+                  className="button button-dark mobile-btn"
+                >
+                  Get started <ArrowIcon />
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Authentication actions */}
@@ -237,7 +328,7 @@ export default function Navbar() {
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 font-bold text-white">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#181916] font-bold text-[#d9fa70] text-xs">
                     {user.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 )}
@@ -259,16 +350,16 @@ export default function Navbar() {
               {/* Profile dropdown */}
               {profileMenuOpen && (
                 <div
-                  className="absolute right-0 top-full z-50 mt-3 w-56 rounded-xl border border-white/10 bg-[#15111c] p-2 text-white shadow-xl"
+                  className="absolute right-0 top-full z-50 mt-3 w-60 rounded-xl border border-[#2b3026] bg-[#1c201b] p-2 text-white shadow-2xl"
                   role="menu"
                   aria-label="Profile menu"
                 >
-                  <div className="border-b border-white/10 px-4 py-3">
-                    <p className="truncate font-semibold">
+                  <div className="border-b border-[#2b3026] px-4 py-3">
+                    <p className="truncate font-semibold text-sm text-white">
                       {user.name || "My Account"}
                     </p>
 
-                    <p className="mt-1 truncate text-xs text-gray-400">
+                    <p className="mt-0.5 truncate text-xs text-[#a5a99f]">
                       {user.email}
                     </p>
                   </div>
@@ -277,7 +368,7 @@ export default function Navbar() {
                     href="/dashboard"
                     role="menuitem"
                     onClick={closeMenus}
-                    className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    className="block rounded-lg px-4 py-2.5 text-sm text-[#e0e2dc] hover:bg-white/10 hover:text-white transition"
                   >
                     Dashboard
                   </Link>
@@ -286,7 +377,7 @@ export default function Navbar() {
                     href="/add-studio"
                     role="menuitem"
                     onClick={closeMenus}
-                    className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    className="block rounded-lg px-4 py-2.5 text-sm text-[#e0e2dc] hover:bg-white/10 hover:text-white transition"
                   >
                     Add New Studio
                   </Link>
@@ -295,7 +386,7 @@ export default function Navbar() {
                     href="/my-listings"
                     role="menuitem"
                     onClick={closeMenus}
-                    className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    className="block rounded-lg px-4 py-2.5 text-sm text-[#e0e2dc] hover:bg-white/10 hover:text-white transition"
                   >
                     My Studio Listings
                   </Link>
@@ -304,17 +395,19 @@ export default function Navbar() {
                     href="/my-bookings"
                     role="menuitem"
                     onClick={closeMenus}
-                    className="block rounded-lg px-4 py-3 text-sm hover:bg-white/10"
+                    className="block rounded-lg px-4 py-2.5 text-sm text-[#e0e2dc] hover:bg-white/10 hover:text-white transition"
                   >
                     My Bookings
                   </Link>
+
+                  <div className="my-1 border-t border-[#2b3026]" />
 
                   <button
                     type="button"
                     role="menuitem"
                     onClick={handleLogout}
                     disabled={loggingOut}
-                    className="block w-full rounded-lg px-4 py-3 text-left text-sm text-red-400 transition hover:bg-white/10 disabled:opacity-50"
+                    className="block w-full rounded-lg px-4 py-2.5 text-left text-sm text-[#f87171] hover:bg-red-500/10 hover:text-red-300 transition disabled:opacity-50"
                   >
                     {loggingOut ? "Logging out..." : "Log out"}
                   </button>
