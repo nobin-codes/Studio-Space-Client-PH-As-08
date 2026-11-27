@@ -1,6 +1,7 @@
 
 "use client";
 
+import "./my-listings.css";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -47,8 +48,13 @@ function extractStudios(data: unknown): Studio[] {
   if (data && typeof data === "object") {
     const result = data as Record<string, unknown>;
 
-    if (Array.isArray(result.studios)) return result.studios as Studio[];
-    if (Array.isArray(result.data)) return result.data as Studio[];
+    if (Array.isArray(result.studios)) {
+      return result.studios as Studio[];
+    }
+
+    if (Array.isArray(result.data)) {
+      return result.data as Studio[];
+    }
 
     if (
       result.data &&
@@ -73,48 +79,41 @@ export default function MyListingsPage() {
     title: string;
   } | null>(null);
 
-  const userEmail = session?.user?.email;
   const userId = session?.user?.id;
 
   useEffect(() => {
-    if (isPending || !userEmail) return;
+    if (isPending || !userId) return;
 
     let active = true;
+    const controller = new AbortController();
 
     const loadMyListings = async () => {
       try {
         const response = await fetch(
-          `${API_URL}/api/studios`,
-          { credentials: "include" }
+          `${API_URL}/api/studios/my-studios`,
+          {
+            method: "GET",
+            credentials: "include",
+            signal: controller.signal,
+          },
         );
 
         if (!response.ok) {
-          throw new Error("Unable to load studio listings.");
+          throw new Error("Unable to load your studio listings.");
         }
 
         const data: unknown = await response.json();
-        const allStudios = extractStudios(data);
-
-        const myStudios = allStudios.filter((studio) => {
-          const email = studio.ownerEmail || studio.hostEmail;
-          const matchesEmail =
-            email &&
-            userEmail &&
-            email.toLowerCase() === userEmail.toLowerCase();
-          const matchesOwnerId =
-            studio.ownerId &&
-            userId &&
-            studio.ownerId === userId;
-          return Boolean(matchesEmail || matchesOwnerId);
-        });
+        const myStudios = extractStudios(data);
 
         if (active) {
           setStudios(myStudios);
         }
       } catch (error) {
-        if (active) {
+        if (active && !(error instanceof Error && error.name === "AbortError")) {
           toast.error(
-            error instanceof Error ? error.message : "Something went wrong."
+            error instanceof Error
+              ? error.message
+              : "Something went wrong.",
           );
         }
       } finally {
@@ -128,8 +127,9 @@ export default function MyListingsPage() {
 
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [isPending, userEmail, userId]);
+  }, [isPending, userId]);
 
   useEffect(() => {
     if (!deleteTarget) return;
@@ -142,36 +142,39 @@ export default function MyListingsPage() {
 
     window.addEventListener("keydown", handleEscape);
 
-    return () => window.removeEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
   }, [deleteTarget, deletingId]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/studios/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${API_URL}/api/studios/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
       const result = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(result?.message || "Unable to delete this studio.");
+        throw new Error(
+          result?.message || "Unable to delete this studio.",
+        );
       }
 
       setStudios((previous) =>
-        previous.filter((studio) => getStudioId(studio) !== id)
+        previous.filter((studio) => getStudioId(studio) !== id),
       );
 
       setDeleteTarget(null);
       toast.success("Studio listing deleted successfully.");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Unable to delete listing."
+        error instanceof Error
+          ? error.message
+          : "Unable to delete listing.",
       );
     } finally {
       setDeletingId(null);
@@ -193,15 +196,19 @@ export default function MyListingsPage() {
           <RefreshCw
             size={30}
             style={{
-              color: "#b48aff",
+              color: "#c5f477",
               animation: "spin 1s linear infinite",
               margin: "0 auto 15px",
             }}
           />
+
           <p style={{ color: "#b9adca", fontSize: "14px" }}>
             Loading your listings...
           </p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+          <style>
+            {`@keyframes spin { to { transform: rotate(360deg); } }`}
+          </style>
         </div>
       </main>
     );
@@ -210,6 +217,7 @@ export default function MyListingsPage() {
   if (!session) {
     return (
       <main
+        className="my-listings-page"
         style={{
           minHeight: "100vh",
           display: "grid",
@@ -223,17 +231,19 @@ export default function MyListingsPage() {
           <h1 style={{ fontSize: "25px", fontWeight: 800 }}>
             Login required
           </h1>
+
           <p style={{ color: "#a59aaf", margin: "12px 0 22px" }}>
             Please log in to manage your studio listings.
           </p>
+
           <Link
             href="/login"
             style={{
               display: "inline-block",
               padding: "12px 22px",
               borderRadius: "10px",
-              background: "#8b5cf6",
-              color: "#ffffff",
+              background: "#c5f477",
+              color: "#151711",
               textDecoration: "none",
               fontWeight: 700,
             }}
@@ -260,15 +270,19 @@ export default function MyListingsPage() {
           <RefreshCw
             size={30}
             style={{
-              color: "#b48aff",
+              color: "#c5f477",
               animation: "spin 1s linear infinite",
               margin: "0 auto 15px",
             }}
           />
+
           <p style={{ color: "#b9adca", fontSize: "14px" }}>
             Loading your listings...
           </p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+          <style>
+            {`@keyframes spin { to { transform: rotate(360deg); } }`}
+          </style>
         </div>
       </main>
     );
@@ -277,6 +291,7 @@ export default function MyListingsPage() {
   return (
     <>
       <main
+        className="my-listings-page"
         style={{
           minHeight: "100vh",
           padding: "38px 20px 80px",
@@ -315,7 +330,7 @@ export default function MyListingsPage() {
             <div>
               <p
                 style={{
-                  color: "#b48aff",
+                  color: "#c5f477",
                   fontSize: "11px",
                   fontWeight: 700,
                   letterSpacing: "1.5px",
@@ -324,6 +339,7 @@ export default function MyListingsPage() {
               >
                 HOST WORKSPACE
               </p>
+
               <h1
                 style={{
                   fontSize: "clamp(28px, 4vw, 38px)",
@@ -334,7 +350,14 @@ export default function MyListingsPage() {
               >
                 My Listings
               </h1>
-              <p style={{ color: "#a59aaf", fontSize: "14px", marginTop: "9px" }}>
+
+              <p
+                style={{
+                  color: "#a59aaf",
+                  fontSize: "14px",
+                  marginTop: "9px",
+                }}
+              >
                 Manage the creative spaces you&apos;ve shared.
               </p>
             </div>
@@ -347,9 +370,9 @@ export default function MyListingsPage() {
                 gap: "9px",
                 padding: "13px 19px",
                 borderRadius: "11px",
-                background: "#8b5cf6",
-                border: "1px solid #b48aff",
-                color: "#ffffff",
+                background: "#c5f477",
+                border: "1px solid #d5ff91",
+                color: "#151711",
                 fontSize: "13px",
                 fontWeight: 700,
                 textDecoration: "none",
@@ -368,15 +391,16 @@ export default function MyListingsPage() {
               gap: "12px",
               marginBottom: "22px",
               padding: "17px 20px",
-              border: "1px solid #30263c",
+              border: "1px solid #343b2b",
               borderRadius: "13px",
-              background: "#15111c",
+              background: "#151811",
             }}
           >
             <div>
               <p style={{ color: "#a59aaf", fontSize: "12px", margin: 0 }}>
                 TOTAL LISTINGS
               </p>
+
               <p
                 style={{
                   color: "#ffffff",
@@ -389,7 +413,7 @@ export default function MyListingsPage() {
               </p>
             </div>
 
-            <Building2 size={28} color="#b48aff" />
+            <Building2 size={28} color="#c5f477" />
           </div>
 
           {studios.length === 0 ? (
@@ -397,19 +421,21 @@ export default function MyListingsPage() {
               style={{
                 padding: "65px 20px",
                 textAlign: "center",
-                border: "1px dashed #49345e",
+                border: "1px dashed #53613b",
                 borderRadius: "18px",
-                background: "#15111c",
+                background: "#151811",
               }}
             >
               <Building2
                 size={42}
-                color="#b48aff"
+                color="#c5f477"
                 style={{ margin: "0 auto 18px" }}
               />
+
               <h2 style={{ fontSize: "20px", fontWeight: 700 }}>
                 No studios listed yet
               </h2>
+
               <p
                 style={{
                   color: "#a59aaf",
@@ -419,6 +445,7 @@ export default function MyListingsPage() {
               >
                 Your studio listings will appear here after you publish them.
               </p>
+
               <Link
                 href="/add-studio"
                 style={{
@@ -427,8 +454,8 @@ export default function MyListingsPage() {
                   gap: "8px",
                   padding: "12px 19px",
                   borderRadius: "10px",
-                  background: "#8b5cf6",
-                  color: "#ffffff",
+                  background: "#c5f477",
+                  color: "#151711",
                   textDecoration: "none",
                   fontSize: "13px",
                   fontWeight: 700,
@@ -455,15 +482,15 @@ export default function MyListingsPage() {
                     key={id}
                     style={{
                       overflow: "hidden",
-                      border: "1px solid #30263c",
+                      border: "1px solid #343b2b",
                       borderRadius: "17px",
-                      background: "#15111c",
+                      background: "#151811",
                     }}
                   >
                     <div
                       style={{
                         height: "205px",
-                        background: "#21172e",
+                        background: "#20251a",
                         overflow: "hidden",
                       }}
                     >
@@ -485,7 +512,7 @@ export default function MyListingsPage() {
                             placeItems: "center",
                           }}
                         >
-                          <Building2 size={40} color="#b48aff" />
+                          <Building2 size={40} color="#c5f477" />
                         </div>
                       )}
                     </div>
@@ -496,8 +523,8 @@ export default function MyListingsPage() {
                           display: "inline-block",
                           padding: "6px 10px",
                           borderRadius: "20px",
-                          background: "#291b3b",
-                          color: "#c4a5ff",
+                          background: "#29321d",
+                          color: "#c5f477",
                           fontSize: "10px",
                           fontWeight: 700,
                         }}
@@ -536,8 +563,8 @@ export default function MyListingsPage() {
                           flexWrap: "wrap",
                           gap: "16px",
                           padding: "14px 0",
-                          borderTop: "1px solid #30263c",
-                          borderBottom: "1px solid #30263c",
+                          borderTop: "1px solid #343b2b",
+                          borderBottom: "1px solid #343b2b",
                         }}
                       >
                         <span
@@ -545,23 +572,24 @@ export default function MyListingsPage() {
                             display: "flex",
                             alignItems: "center",
                             gap: "6px",
-                            color: "#e5d8f6",
+                            color: "#e5eadc",
                             fontSize: "12px",
                           }}
                         >
-                          <Clock size={14} color="#b48aff" />
+                          <Clock size={14} color="#c5f477" />
                           ${studio.hourlyRate}/hr
                         </span>
+
                         <span
                           style={{
                             display: "flex",
                             alignItems: "center",
                             gap: "6px",
-                            color: "#e5d8f6",
+                            color: "#e5eadc",
                             fontSize: "12px",
                           }}
                         >
-                          <Users size={14} color="#b48aff" />
+                          <Users size={14} color="#c5f477" />
                           {studio.maxCapacity} guests
                         </span>
                       </div>
@@ -583,9 +611,9 @@ export default function MyListingsPage() {
                             gap: "7px",
                             padding: "11px",
                             borderRadius: "9px",
-                            border: "1px solid #62458a",
-                            background: "#291b3b",
-                            color: "#d7c3ff",
+                            border: "1px solid #53613b",
+                            background: "#29321d",
+                            color: "#d9f5ad",
                             textDecoration: "none",
                             fontSize: "12px",
                             fontWeight: 700,
@@ -634,8 +662,11 @@ export default function MyListingsPage() {
 
       {deleteTarget && (
         <div
+          className="listings-modal-overlay"
           onClick={() => {
-            if (!deletingId) setDeleteTarget(null);
+            if (!deletingId) {
+              setDeleteTarget(null);
+            }
           }}
           style={{
             position: "fixed",
@@ -649,6 +680,7 @@ export default function MyListingsPage() {
           }}
         >
           <section
+            className="listings-delete-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-dialog-title"
@@ -657,9 +689,9 @@ export default function MyListingsPage() {
               width: "100%",
               maxWidth: "420px",
               padding: "28px",
-              border: "1px solid #49345e",
+              border: "1px solid #53613b",
               borderRadius: "20px",
-              background: "#17111f",
+              background: "#171b13",
               boxShadow: "0 25px 80px rgba(0,0,0,0.5)",
               color: "#ffffff",
             }}
@@ -688,7 +720,11 @@ export default function MyListingsPage() {
 
               <button
                 type="button"
-                onClick={() => setDeleteTarget(null)}
+                onClick={() => {
+                  if (!deletingId) {
+                    setDeleteTarget(null);
+                  }
+                }}
                 disabled={Boolean(deletingId)}
                 aria-label="Close confirmation dialog"
                 style={{
@@ -696,11 +732,11 @@ export default function MyListingsPage() {
                   placeItems: "center",
                   width: "36px",
                   height: "36px",
-                  border: "1px solid #40334c",
+                  border: "1px solid #403b32",
                   borderRadius: "10px",
                   background: "transparent",
                   color: "#b9adca",
-                  cursor: "pointer",
+                  cursor: deletingId ? "not-allowed" : "pointer",
                 }}
               >
                 <X size={18} />
@@ -748,11 +784,11 @@ export default function MyListingsPage() {
                   padding: "12px",
                   border: "1px solid #493b57",
                   borderRadius: "10px",
-                  background: "#241b2e",
-                  color: "#e5d8f6",
+                  background: "#24291e",
+                  color: "#e5eadc",
                   fontSize: "13px",
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: deletingId ? "not-allowed" : "pointer",
                 }}
               >
                 Keep Listing
