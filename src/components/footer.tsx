@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 
 function ArrowIcon() {
@@ -64,8 +63,7 @@ export default function Footer() {
             </Link>
 
             <p>
-              A home for creative spaces and the people who bring ideas to
-              life.
+              A home for creative spaces and the people who bring ideas to life.
             </p>
 
             <div className="footer-socials">
@@ -101,21 +99,11 @@ export default function Footer() {
           <div className="footer-column">
             <h4>Explore</h4>
             <Link href="/studios">All studios</Link>
-            <Link href="/studios?category=Photo%20Studios">
-              Photo studios
-            </Link>
-            <Link href="/studios?category=Sound%20Stages">
-              Sound stages
-            </Link>
-            <Link href="/studios?category=Podcast%20Rooms">
-              Podcast rooms
-            </Link>
-            <Link href="/studios?category=Music%20Suites">
-              Music suites
-            </Link>
-            <Link href="/studios?category=Art%20Workshops">
-              Art workshops
-            </Link>
+            <Link href="/studios?category=Photo%20Studios">Photo studios</Link>
+            <Link href="/studios?category=Sound%20Stages">Sound stages</Link>
+            <Link href="/studios?category=Podcast%20Rooms">Podcast rooms</Link>
+            <Link href="/studios?category=Music%20Suites">Music suites</Link>
+            <Link href="/studios?category=Art%20Workshops">Art workshops</Link>
           </div>
 
           <div className="footer-column">
@@ -129,9 +117,7 @@ export default function Footer() {
 
           <div className="footer-newsletter">
             <h4>Stay in the creative loop.</h4>
-            <p>
-              Get inspiration and updates from the StudioSpace community.
-            </p>
+            <p>Get inspiration and updates from the StudioSpace community.</p>
 
             <form
               className="newsletter-form"
@@ -161,9 +147,31 @@ export default function Footer() {
 
         <div className="footer-bottom">
           <span>© 2026 StudioSpace. All rights reserved.</span>
-          <span>MADE FOR THE MAKERS.</span>
 
-          <div>
+          <span className="footer-tagline">MADE FOR THE MAKERS.</span>
+
+          <Link
+            href="https://github.com/nobin-codes"
+            target="_blank"
+            rel="noreferrer"
+            className="footer-credit"
+            aria-label="StudioSpace crafted by Nobin, visit GitHub profile"
+          >
+            <span className="footer-credit-label">
+              CRAFTED WITH CREATIVITY BY
+            </span>
+            <span className="footer-credit-name">
+              <span className="footer-credit-sparkle" aria-hidden="true">
+                ✳
+              </span>
+              Nobin
+              <span className="footer-credit-arrow" aria-hidden="true">
+                ↗
+              </span>
+            </span>
+          </Link>
+
+          <div className="footer-legal-links">
             <Link href="/#about">Terms</Link>
             <Link href="/#about">Privacy</Link>
           </div>
