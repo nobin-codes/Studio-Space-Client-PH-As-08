@@ -163,6 +163,7 @@ export default function Footer() {
           <span>© 2026 StudioSpace. All rights reserved.</span>
           <span>MADE FOR THE MAKERS.</span>
 
+          <span className="footer-credit">Made with <span aria-hidden="true">♥</span> by Nobin</span>
           <div>
             <Link href="/#about">Terms</Link>
             <Link href="/#about">Privacy</Link>

@@ -1082,7 +1082,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
   border-top: 1px solid #343a31;
   color: #92988c;
   font-size: 10px;
@@ -1900,5 +1901,299 @@ a {
 
   .explore-content .studio-card-image {
     height: 220px;
+  }
+}
+
+/* Footer creator credit */
+.footer-credit {
+  color: #c3c9bb;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.footer-credit span {
+  color: var(--accent);
+}
+
+
+
+/* =========================================
+   HOMEPAGE VISUAL POLISH
+   Scoped to StudioSpace homepage only
+========================================= */
+
+/* Smoother interactions */
+.studio-home a,
+.studio-home button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.studio-home a:focus-visible,
+.site-footer a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* Hero refinement */
+.studio-home .hero-slide {
+  background-position: center;
+  isolation: isolate;
+}
+
+.studio-home .hero-overlay {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(12, 16, 12, 0.91) 0%,
+      rgba(12, 16, 12, 0.69) 42%,
+      rgba(12, 16, 12, 0.16) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(12, 16, 12, 0.28),
+      transparent 45%
+    );
+}
+
+.studio-home .hero-copy {
+  animation: studio-hero-enter 0.8s ease both;
+}
+
+.studio-home .hero-eyebrow {
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
+}
+
+.studio-home .hero-copy h1 {
+  text-wrap: balance;
+}
+
+.studio-home .hero-copy p {
+  max-width: 450px;
+}
+
+.studio-home .hero-secondary-link {
+  transition: color 0.25s ease, gap 0.25s ease;
+}
+
+.studio-home .hero-secondary-link:hover {
+  color: var(--accent);
+  gap: 17px;
+}
+
+/* Section headings */
+.studio-home .section-heading h2 {
+  text-wrap: balance;
+}
+
+.studio-home .section-heading h2 span {
+  position: relative;
+}
+
+.studio-home .section-heading p {
+  max-width: 480px;
+}
+
+/* Featured studio cards */
+.studio-home .studio-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(20, 25, 18, 0.025);
+}
+
+.studio-home .studio-card-image {
+  background: #e7e8df;
+}
+
+.studio-home .studio-card-image img {
+  transition: transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.studio-home .studio-card:hover .studio-card-image img {
+  transform: scale(1.065);
+}
+
+.studio-home .studio-image-arrow {
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.studio-home .studio-card:hover .studio-image-arrow {
+  transform: rotate(-40deg);
+  background: #c9ed5d;
+}
+
+.studio-home .studio-card-content h3 {
+  transition: color 0.2s ease;
+}
+
+.studio-home .studio-card:hover .studio-card-content h3 {
+  color: #71864d;
+}
+
+/* Category cards */
+.studio-home .category-card {
+  isolation: isolate;
+  border-radius: 6px;
+}
+
+.studio-home .category-card img {
+  transition: transform 0.85s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.studio-home .category-shade {
+  transition: background 0.3s ease;
+}
+
+.studio-home .category-card:hover .category-shade {
+  background: linear-gradient(
+    0deg,
+    rgba(12, 16, 12, 0.9),
+    rgba(12, 16, 12, 0.08) 85%
+  );
+}
+
+.studio-home .category-info h3 {
+  transition: transform 0.3s ease;
+}
+
+.studio-home .category-card:hover .category-info h3 {
+  transform: translateY(-3px);
+}
+
+/* How it works */
+.studio-home .process-card {
+  transition: background 0.3s ease;
+}
+
+.studio-home .process-card:hover {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.studio-home .process-icon {
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.studio-home .process-card:hover .process-icon {
+  transform: translateY(-4px) rotate(-7deg);
+  background: var(--accent);
+}
+
+/* Host section */
+.studio-home .host-image img {
+  transition: transform 1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.studio-home .host-section:hover .host-image img {
+  transform: scale(1.025);
+}
+
+/* Trust cards */
+.studio-home .assurance-card {
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.studio-home .assurance-card:hover {
+  transform: translateY(-5px);
+  border-color: #c6d2b0;
+  box-shadow: 0 12px 30px rgba(20, 25, 18, 0.055);
+}
+
+.studio-home .assurance-icon {
+  transition: transform 0.3s ease;
+}
+
+.studio-home .assurance-card:hover .assurance-icon {
+  transform: scale(1.08);
+}
+
+/* Final CTA */
+.studio-home .final-cta {
+  isolation: isolate;
+}
+
+.studio-home .final-cta .button {
+  position: relative;
+  z-index: 2;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.studio-home .final-cta .button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.13);
+}
+
+/* Footer */
+.site-footer {
+  position: relative;
+}
+
+.site-footer .footer-socials a {
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.site-footer .footer-socials a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-3px);
+}
+
+/* Animation */
+@keyframes studio-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .studio-home *,
+  .site-footer * {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile refinements */
+@media (max-width: 760px) {
+  .studio-home .hero-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(12, 16, 12, 0.88),
+      rgba(12, 16, 12, 0.48)
+    );
+  }
+
+  .studio-home .studio-card {
+    border-radius: 7px;
+  }
+
+  .studio-home .category-card {
+    border-radius: 5px;
+  }
+
+  .studio-home .assurance-card:hover {
+    transform: none;
+  }
+
+  .footer-credit {
+    white-space: normal;
   }
 }
