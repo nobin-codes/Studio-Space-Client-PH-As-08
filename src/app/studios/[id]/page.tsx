@@ -1,5 +1,6 @@
 "use client";
 
+import "./details.css";
 import {
   Suspense,
   useEffect,
@@ -474,7 +475,7 @@ function StudioDetailsPageContent() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main className="studio-details-page" style={pageStyle}>
       <div style={contentStyle}>
         <Link href="/studios" style={backStyle}>
           <ArrowLeft size={16} />
@@ -550,7 +551,7 @@ function StudioDetailsPageContent() {
           </div>
 
           {/* Booking card */}
-          <aside style={bookingCardStyle}>
+          <aside className="studio-booking-card" style={bookingCardStyle}>
             <p style={eyebrowStyle}>RESERVE YOUR SPACE</p>
 
             <h2 style={bookingTitleStyle}>Book this studio</h2>

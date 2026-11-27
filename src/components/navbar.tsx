@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme-provider";
 
 function ArrowIcon() {
   return (
@@ -49,7 +50,7 @@ function ApertureIcon() {
         strokeWidth="1.7"
         strokeLinecap="round"
       />
-            <circle cx="16" cy="16" r="3.2" fill="currentColor" />
+      <circle cx="16" cy="16" r="3.2" fill="currentColor" />
     </svg>
   );
 }
@@ -65,7 +66,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Close menus on browser back/forward or click outside
+  // Close menus on browser back/forward.
   useEffect(() => {
     const handlePopState = () => {
       setMobileMenuOpen(false);
@@ -73,10 +74,13 @@ export default function Navbar() {
     };
 
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
-  // Close profile menu when clicking outside
+  // Close profile menu when clicking outside.
   useEffect(() => {
     if (!profileMenuOpen) return;
 
@@ -107,7 +111,7 @@ export default function Navbar() {
     };
   }, [profileMenuOpen]);
 
-  // Close mobile navigation with Escape
+  // Close mobile navigation with Escape.
   useEffect(() => {
     if (!mobileMenuOpen) return;
 
@@ -230,10 +234,12 @@ export default function Navbar() {
                       {user.name?.charAt(0).toUpperCase() || "U"}
                     </span>
                   )}
+
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate text-[#181916]">
                       {user.name || "My Account"}
                     </p>
+
                     <p className="text-xs text-[#777970] truncate">
                       {user.email}
                     </p>
@@ -248,6 +254,7 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
+
                   <Link
                     href="/add-studio"
                     onClick={closeMenus}
@@ -255,6 +262,7 @@ export default function Navbar() {
                   >
                     Add New Studio
                   </Link>
+
                   <Link
                     href="/my-listings"
                     onClick={closeMenus}
@@ -262,6 +270,7 @@ export default function Navbar() {
                   >
                     My Studio Listings
                   </Link>
+
                   <Link
                     href="/my-bookings"
                     onClick={closeMenus}
@@ -269,6 +278,7 @@ export default function Navbar() {
                   >
                     My Bookings
                   </Link>
+
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -288,6 +298,7 @@ export default function Navbar() {
                 >
                   Log in
                 </Link>
+
                 <Link
                   href="/register"
                   onClick={closeMenus}
@@ -300,8 +311,10 @@ export default function Navbar() {
           </div>
         </nav>
 
-        {/* Authentication actions */}
+        {/* Theme and authentication actions */}
         <div className="header-actions">
+          <ThemeToggle />
+
           {isPending ? (
             <span className="login-link" aria-live="polite">
               Loading...
@@ -443,7 +456,11 @@ export default function Navbar() {
             setMobileMenuOpen((previous) => !previous);
             setProfileMenuOpen(false);
           }}
-          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-label={
+            mobileMenuOpen
+              ? "Close navigation menu"
+              : "Open navigation menu"
+          }
           aria-expanded={mobileMenuOpen}
         >
           <span />

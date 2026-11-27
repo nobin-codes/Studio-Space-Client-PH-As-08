@@ -1,6 +1,8 @@
 
 "use client";
 
+import "./add-studio.css";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -198,6 +200,7 @@ export default function AddStudioPage() {
         >
           {title}
         </h2>
+
         <p
           style={{
             marginTop: "5px",
@@ -214,6 +217,7 @@ export default function AddStudioPage() {
 
   return (
     <main
+      className="add-studio-page"
       style={{
         minHeight: "100vh",
         padding: "40px 18px 80px",
@@ -305,11 +309,18 @@ export default function AddStudioPage() {
               "Tell creators what makes your studio special."
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+              }}
+            >
               <div>
                 <label htmlFor="title" style={labelStyle}>
                   Studio name *
                 </label>
+
                 <input
                   id="title"
                   name="title"
@@ -325,6 +336,7 @@ export default function AddStudioPage() {
                 <label htmlFor="category" style={labelStyle}>
                   Studio category *
                 </label>
+
                 <select
                   id="category"
                   name="category"
@@ -337,7 +349,10 @@ export default function AddStudioPage() {
                     <option
                       key={category}
                       value={category}
-                      style={{ backgroundColor: "#15111c", color: "#ffffff" }}
+                      style={{
+                        backgroundColor: "#15111c",
+                        color: "#ffffff",
+                      }}
                     >
                       {category}
                     </option>
@@ -349,6 +364,7 @@ export default function AddStudioPage() {
                 <label htmlFor="overview" style={labelStyle}>
                   Studio overview *
                 </label>
+
                 <textarea
                   id="overview"
                   name="overview"
@@ -391,7 +407,8 @@ export default function AddStudioPage() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gridTemplateColumns:
+                      "repeat(auto-fit, minmax(200px, 1fr))",
                     gap: "15px",
                   }}
                 >
@@ -399,6 +416,7 @@ export default function AddStudioPage() {
                     <label htmlFor="hostName" style={labelStyle}>
                       Host name
                     </label>
+
                     <input
                       id="hostName"
                       value={hostName}
@@ -416,6 +434,7 @@ export default function AddStudioPage() {
                     <label htmlFor="hostEmail" style={labelStyle}>
                       Host email
                     </label>
+
                     <input
                       id="hostEmail"
                       value={hostEmail}
@@ -455,7 +474,8 @@ export default function AddStudioPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(180px, 1fr))",
                 gap: "17px",
               }}
             >
@@ -463,6 +483,7 @@ export default function AddStudioPage() {
                 <label htmlFor="hourlyRate" style={labelStyle}>
                   Hourly rate ($) *
                 </label>
+
                 <input
                   id="hourlyRate"
                   name="hourlyRate"
@@ -480,6 +501,7 @@ export default function AddStudioPage() {
                 <label htmlFor="securityDeposit" style={labelStyle}>
                   Security deposit ($) *
                 </label>
+
                 <input
                   id="securityDeposit"
                   name="securityDeposit"
@@ -497,6 +519,7 @@ export default function AddStudioPage() {
                 <label htmlFor="maxCapacity" style={labelStyle}>
                   Max capacity *
                 </label>
+
                 <input
                   id="maxCapacity"
                   name="maxCapacity"
@@ -520,11 +543,18 @@ export default function AddStudioPage() {
               "Help creators find your space and see what it looks like."
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+              }}
+            >
               <div>
                 <label htmlFor="location" style={labelStyle}>
                   Full location / address *
                 </label>
+
                 <input
                   id="location"
                   name="location"
@@ -540,6 +570,7 @@ export default function AddStudioPage() {
                 <label htmlFor="imageUrl" style={labelStyle}>
                   Studio image URL *
                 </label>
+
                 <input
                   id="imageUrl"
                   name="imageUrl"
@@ -550,6 +581,7 @@ export default function AddStudioPage() {
                   placeholder="https://example.com/studio-image.jpg"
                   style={inputStyle}
                 />
+
                 <p
                   style={{
                     marginTop: "8px",
@@ -574,7 +606,8 @@ export default function AddStudioPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(210px, 1fr))",
                 gap: "10px",
               }}
             >
@@ -613,6 +646,7 @@ export default function AddStudioPage() {
                         flexShrink: 0,
                       }}
                     />
+
                     {amenity}
                   </label>
                 );
@@ -657,6 +691,7 @@ export default function AddStudioPage() {
               >
                 Ready to share your space?
               </h3>
+
               <p
                 style={{
                   marginTop: "6px",
@@ -697,6 +732,7 @@ export default function AddStudioPage() {
                 : isPending
                   ? "Checking account..."
                   : "Publish studio"}
+
               {!loading && <ArrowRight size={16} />}
             </button>
           </section>
@@ -712,7 +748,11 @@ export default function AddStudioPage() {
         >
           <ImageIcon
             size={12}
-            style={{ display: "inline", verticalAlign: "middle", marginRight: "5px" }}
+            style={{
+              display: "inline",
+              verticalAlign: "middle",
+              marginRight: "5px",
+            }}
           />
           StudioSpace · Helping creative spaces get discovered.
         </p>

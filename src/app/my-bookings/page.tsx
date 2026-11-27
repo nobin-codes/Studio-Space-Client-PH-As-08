@@ -1,7 +1,8 @@
-
 "use client";
 
+import "./my-bookings.css";
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -38,16 +39,13 @@ function getBookingId(booking: Booking) {
 function formatDate(value = "") {
   if (!value) return "Date not available";
 
-  // The API stores dates as "YYYY-MM-DD". Parsing those through the Date
-  // constructor treats them as UTC midnight, which shows the previous day in
-  // timezones west of UTC, so build a local date instead.
   const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
 
   const date = dateOnly
     ? new Date(
         Number(dateOnly[1]),
         Number(dateOnly[2]) - 1,
-        Number(dateOnly[3])
+        Number(dateOnly[3]),
       )
     : new Date(value);
 
@@ -64,23 +62,43 @@ function normalizeStatus(value = "") {
   return value.trim().toLowerCase();
 }
 
-function getStatusStyle(status = "") {
+function getStatusStyle(status = ""): CSSProperties {
   const value = normalizeStatus(status);
 
   if (value === "confirmed") {
-    return { background: "#dcfce7", color: "#166534" };
+    return {
+      background: "rgba(197, 244, 119, 0.13)",
+      color: "#c5f477",
+      border: "1px solid rgba(197, 244, 119, 0.25)",
+    };
   }
 
   if (value === "cancelled") {
-    return { background: "#fee2e2", color: "#991b1b" };
+    return {
+      background: "rgba(248, 113, 113, 0.12)",
+      color: "#fca5a5",
+      border: "1px solid rgba(248, 113, 113, 0.22)",
+    };
   }
 
   if (value === "pending") {
-    return { background: "#fef3c7", color: "#92400e" };
+    return {
+      background: "rgba(251, 191, 36, 0.12)",
+      color: "#fbbf24",
+      border: "1px solid rgba(251, 191, 36, 0.22)",
+    };
   }
 
-  return { background: "#ede9fe", color: "#5b21b6" };
+  return {
+    background: "rgba(167, 139, 250, 0.12)",
+    color: "#c4b5fd",
+    border: "1px solid rgba(167, 139, 250, 0.22)",
+  };
 }
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 export default function MyBookingsPage() {
   const { data: session, isPending } = authClient.useSession();
@@ -94,6 +112,9 @@ export default function MyBookingsPage() {
     title: string;
   } | null>(null);
 
+  const modalRef = useRef<HTMLElement | null>(null);
+  const cancellingIdRef = useRef(cancellingId);
+
   useEffect(() => {
     if (isPending || !session?.user?.email) return;
 
@@ -101,22 +122,14 @@ export default function MyBookingsPage() {
 
     const fetchBookings = async () => {
       try {
+        setLoading(true);
         setError("");
 
-        const apiUrl = (
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-        ).replace(/\/+$/, "");
-
-        const response = await fetch(
-          `${apiUrl}/api/bookings/my-bookings?email=${encodeURIComponent(
-            session.user.email
-          )}`,
-          {
-            method: "GET",
-            credentials: "include",
-            signal: controller.signal,
-          }
-        );
+        const response = await fetch(`${API_URL}/api/bookings/my-bookings`, {
+          method: "GET",
+          credentials: "include",
+          signal: controller.signal,
+        });
 
         const result: unknown = await response.json().catch(() => null);
 
@@ -129,7 +142,7 @@ export default function MyBookingsPage() {
           throw new Error(
             typeof data?.message === "string"
               ? data.message
-              : "Unable to load your bookings."
+              : "Unable to load your bookings.",
           );
         }
 
@@ -150,21 +163,17 @@ export default function MyBookingsPage() {
       }
     };
 
-    fetchBookings();
+    void fetchBookings();
 
     return () => {
       controller.abort();
     };
   }, [session?.user?.email, isPending]);
 
-  const modalRef = useRef<HTMLElement | null>(null);
-  const cancellingIdRef = useRef(cancellingId);
-
   useEffect(() => {
     cancellingIdRef.current = cancellingId;
   }, [cancellingId]);
 
-  // Keep keyboard focus inside the confirmation dialog and restore it on close.
   useEffect(() => {
     if (!cancelTarget) return;
 
@@ -180,7 +189,7 @@ export default function MyBookingsPage() {
     const getFocusable = () =>
       modal
         ? Array.from(
-            modal.querySelectorAll<HTMLElement>(focusableSelector)
+            modal.querySelectorAll<HTMLElement>(focusableSelector),
           ).filter((element) => element.offsetParent !== null)
         : [];
 
@@ -228,11 +237,7 @@ export default function MyBookingsPage() {
     try {
       setCancellingId(id);
 
-      const apiUrl = (
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-      ).replace(/\/+$/, "");
-
-      const response = await fetch(`${apiUrl}/api/bookings/${id}/cancel`, {
+      const response = await fetch(`${API_URL}/api/bookings/${id}/cancel`, {
         method: "PATCH",
         credentials: "include",
       });
@@ -254,8 +259,8 @@ export default function MyBookingsPage() {
         previous.map((booking) =>
           getBookingId(booking) === id
             ? { ...booking, status: "Cancelled" }
-            : booking
-        )
+            : booking,
+        ),
       );
 
       setCancelTarget(null);
@@ -272,20 +277,25 @@ export default function MyBookingsPage() {
 
   if (isPending) {
     return (
-      <main style={styles.center}>
-        <LoaderCircle size={32} className="animate-spin" color="#a78bfa" />
-        <p style={styles.muted}>Loading your bookings...</p>
+      <main className="my-bookings-state">
+        <LoaderCircle size={34} className="my-bookings-spinner" />
+        <p>Loading your bookings...</p>
       </main>
     );
   }
 
   if (!session?.user) {
     return (
-      <main style={styles.center}>
-        <Ticket size={48} color="#a78bfa" />
-        <h2 style={styles.heading}>Login required</h2>
-        <p style={styles.muted}>Please log in to view your bookings.</p>
-        <Link href="/login" style={styles.primaryButton}>
+      <main className="my-bookings-state">
+        <div className="my-bookings-state-icon">
+          <Ticket size={30} />
+        </div>
+
+        <h2>Login required</h2>
+
+        <p>Please log in to view your bookings.</p>
+
+        <Link href="/login" className="my-bookings-primary-button">
           Login
         </Link>
       </main>
@@ -294,246 +304,316 @@ export default function MyBookingsPage() {
 
   if (loading) {
     return (
-      <main style={styles.center}>
-        <LoaderCircle size={32} className="animate-spin" color="#a78bfa" />
-        <p style={styles.muted}>Loading your bookings...</p>
+      <main className="my-bookings-state">
+        <LoaderCircle size={34} className="my-bookings-spinner" />
+        <p>Loading your bookings...</p>
       </main>
     );
   }
 
   const confirmedCount = bookings.filter(
-    (booking) => normalizeStatus(booking.status) === "confirmed"
+    (booking) => normalizeStatus(booking.status) === "confirmed",
   ).length;
 
   const pendingCount = bookings.filter(
-    (booking) => normalizeStatus(booking.status) === "pending"
+    (booking) => normalizeStatus(booking.status) === "pending",
   ).length;
 
   return (
     <>
-      <main style={styles.page}>
-        <div style={styles.container}>
-          <div style={styles.header}>
-            <div>
-              <p style={styles.eyebrow}>YOUR ACTIVITY</p>
-              <h1 style={styles.title}>My Bookings</h1>
-              <p style={styles.subtitle}>
+      <main className="my-bookings-page">
+        <div className="my-bookings-container">
+          <header className="my-bookings-header">
+            <div className="my-bookings-heading-content">
+              <p className="my-bookings-eyebrow">YOUR ACTIVITY</p>
+
+              <h1>My Bookings</h1>
+
+              <p className="my-bookings-subtitle">
                 Keep track of the studios you have booked.
               </p>
             </div>
 
-            <Link href="/studios" style={styles.primaryButton}>
+            <Link href="/studios" className="my-bookings-primary-button">
+              <CalendarDays size={17} />
               Explore Studios
             </Link>
-          </div>
+          </header>
 
-          <div style={styles.statsGrid}>
-            <div style={styles.statCard}>
-              <CalendarCheck size={22} color="#a78bfa" />
-              <div>
-                <p style={styles.statNumber}>{bookings.length}</p>
-                <p style={styles.statLabel}>Total bookings</p>
+          <section className="my-bookings-stats" aria-label="Booking summary">
+            <article className="my-bookings-stat-card">
+              <div className="my-bookings-stat-icon total">
+                <CalendarCheck size={21} />
               </div>
+
+              <div>
+                <p className="my-bookings-stat-number">{bookings.length}</p>
+                <p className="my-bookings-stat-label">Total bookings</p>
+              </div>
+            </article>
+
+            <article className="my-bookings-stat-card">
+              <div className="my-bookings-stat-icon confirmed">
+                <CalendarDays size={21} />
+              </div>
+
+              <div>
+                <p className="my-bookings-stat-number">{confirmedCount}</p>
+                <p className="my-bookings-stat-label">Confirmed</p>
+              </div>
+            </article>
+
+            <article className="my-bookings-stat-card">
+              <div className="my-bookings-stat-icon pending">
+                <Clock size={21} />
+              </div>
+
+              <div>
+                <p className="my-bookings-stat-number">{pendingCount}</p>
+                <p className="my-bookings-stat-label">Pending</p>
+              </div>
+            </article>
+          </section>
+
+          <div className="my-bookings-section-header">
+            <div>
+              <p className="my-bookings-section-eyebrow">OVERVIEW</p>
+              <h2>Booking History</h2>
             </div>
 
-            <div style={styles.statCard}>
-              <CalendarDays size={22} color="#34d399" />
-              <div>
-                <p style={styles.statNumber}>{confirmedCount}</p>
-                <p style={styles.statLabel}>Confirmed</p>
-              </div>
-            </div>
-
-            <div style={styles.statCard}>
-              <Clock size={22} color="#fbbf24" />
-              <div>
-                <p style={styles.statNumber}>{pendingCount}</p>
-                <p style={styles.statLabel}>Pending</p>
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Booking History</h2>
-            <span style={styles.count}>{bookings.length} bookings</span>
+            <span className="my-bookings-count">
+              {bookings.length} {bookings.length === 1 ? "booking" : "bookings"}
+            </span>
           </div>
 
           {error ? (
-            <div style={styles.emptyCard}>
-              <p style={{ color: "#fca5a5" }}>{error}</p>
+            <div className="my-bookings-empty-card my-bookings-error-card">
+              <div className="my-bookings-state-icon error">
+                <AlertTriangle size={28} />
+              </div>
+
+              <h3>Unable to load bookings</h3>
+
+              <p>{error}</p>
+
               <button
+                type="button"
                 onClick={() => window.location.reload()}
-                style={styles.secondaryButton}
+                className="my-bookings-secondary-button"
               >
                 Try Again
               </button>
             </div>
           ) : bookings.length === 0 ? (
-            <div style={styles.emptyCard}>
-              <div style={styles.emptyIcon}>
-                <CalendarDays size={30} color="#a78bfa" />
+            <div className="my-bookings-empty-card">
+              <div className="my-bookings-state-icon">
+                <CalendarDays size={30} />
               </div>
-              <h3 style={styles.emptyTitle}>No bookings yet</h3>
-              <p style={styles.muted}>
-                Your studio bookings will appear here once you make a reservation.
+
+              <p className="my-bookings-empty-eyebrow">NOTHING HERE YET</p>
+
+              <h3>No bookings yet</h3>
+
+              <p>
+                Your studio bookings will appear here once you make a
+                reservation.
               </p>
-              <Link href="/studios" style={styles.primaryButton}>
+
+              <Link href="/studios" className="my-bookings-primary-button">
+                <Ticket size={17} />
                 Find a Studio
               </Link>
             </div>
           ) : (
-            <div style={styles.bookingList}>
+            <section className="my-bookings-list" aria-label="Your bookings">
               {bookings.map((booking, index) => {
                 const id = getBookingId(booking);
+                const status = normalizeStatus(booking.status);
+                const canCancel = status === "pending" && Boolean(id);
 
                 return (
-                  <article key={id || index} style={styles.bookingCard}>
-                    <div style={styles.bookingTop}>
-                      <div>
-                        <h3 style={styles.bookingTitle}>
-                          {booking.studioTitle || "Studio Booking"}
-                        </h3>
-                        <p style={styles.bookingId}>
+                  <article key={id || index} className="my-bookings-card">
+                    <div className="my-bookings-card-top">
+                      <div className="my-bookings-card-heading">
+                        <span className="my-bookings-card-label">
+                          STUDIO RESERVATION
+                        </span>
+
+                        <h3>{booking.studioTitle || "Studio Booking"}</h3>
+
+                        <p className="my-bookings-id">
                           Booking ID: {id || "Not available"}
                         </p>
                       </div>
 
                       <span
-                        style={{
-                          ...styles.status,
-                          ...getStatusStyle(booking.status),
-                        }}
+                        className={`my-bookings-status ${status || "unknown"}`}
+                        style={getStatusStyle(booking.status)}
                       >
+                        <span className="my-bookings-status-dot" />
                         {booking.status || "Unknown"}
                       </span>
                     </div>
 
-                    <div style={styles.detailsGrid}>
-                      <div style={styles.detail}>
-                        <CalendarDays size={17} color="#a78bfa" />
-                        <span>{formatDate(booking.bookingDate)}</span>
-                      </div>
-
-                      <div style={styles.detail}>
-                        <Clock size={17} color="#a78bfa" />
-                        <span>
-                          {booking.startTime || "N/A"}
-                          {booking.endTime ? ` - ${booking.endTime}` : ""}
+                    <div className="my-bookings-details">
+                      <div className="my-bookings-detail">
+                        <span className="my-bookings-detail-icon">
+                          <CalendarDays size={17} />
                         </span>
+
+                        <div>
+                          <span className="my-bookings-detail-label">
+                            BOOKING DATE
+                          </span>
+                          <p>{formatDate(booking.bookingDate)}</p>
+                        </div>
                       </div>
 
-                      <div style={styles.detail}>
-                        <MapPin size={17} color="#a78bfa" />
-                        <span>
-                          {booking.studioLocation || "Location not available"}
+                      <div className="my-bookings-detail">
+                        <span className="my-bookings-detail-icon">
+                          <Clock size={17} />
                         </span>
+
+                        <div>
+                          <span className="my-bookings-detail-label">
+                            TIME SLOT
+                          </span>
+                          <p>
+                            {booking.startTime || "N/A"}
+                            {booking.endTime ? ` - ${booking.endTime}` : ""}
+                          </p>
+                        </div>
                       </div>
 
-                      <div style={styles.detail}>
-                        <Users size={17} color="#a78bfa" />
-                        <span>Studio reservation</span>
+                      <div className="my-bookings-detail">
+                        <span className="my-bookings-detail-icon">
+                          <MapPin size={17} />
+                        </span>
+
+                        <div>
+                          <span className="my-bookings-detail-label">
+                            LOCATION
+                          </span>
+                          <p>
+                            {booking.studioLocation || "Location not available"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="my-bookings-detail">
+                        <span className="my-bookings-detail-icon">
+                          <Users size={17} />
+                        </span>
+
+                        <div>
+                          <span className="my-bookings-detail-label">
+                            RESERVATION
+                          </span>
+                          <p>Studio reservation</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div style={styles.bookingBottom}>
-                      <div>
-                        <p style={styles.priceLabel}>Total amount</p>
-                        <p style={styles.price}>
+                    <div className="my-bookings-card-bottom">
+                      <div className="my-bookings-price-block">
+                        <p>Total amount</p>
+
+                        <strong>
                           {typeof booking.totalPrice === "number"
                             ? `$${booking.totalPrice.toFixed(2)}`
                             : "Not available"}
-                        </p>
+                        </strong>
                       </div>
 
-                      <div style={styles.actions}>
+                      <div className="my-bookings-actions">
                         {booking.studioId && (
                           <Link
                             href={`/studios/${booking.studioId}`}
-                            style={styles.secondaryButton}
+                            className="my-bookings-secondary-button"
                           >
                             View Studio
                           </Link>
                         )}
 
-                        {normalizeStatus(booking.status) === "pending" &&
-                          id && (
-                            <button
-                              onClick={() =>
-                                setCancelTarget({
-                                  id,
-                                  title:
-                                    booking.studioTitle || "this studio",
-                                })
-                              }
-                              disabled={Boolean(cancellingId)}
-                              style={{
-                                ...styles.cancelButton,
-                                opacity: cancellingId ? 0.6 : 1,
-                              }}
-                            >
-                              <XCircle size={15} />
-                              Cancel Booking
-                            </button>
-                          )}
+                        {canCancel && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCancelTarget({
+                                id,
+                                title: booking.studioTitle || "this studio",
+                              })
+                            }
+                            disabled={Boolean(cancellingId)}
+                            className="my-bookings-cancel-button"
+                          >
+                            <XCircle size={16} />
+                            Cancel Booking
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>
                 );
               })}
-            </div>
+            </section>
           )}
         </div>
       </main>
 
       {cancelTarget && (
         <div
+          className="my-bookings-modal-overlay"
           onClick={() => {
-            if (!cancellingId) setCancelTarget(null);
+            if (!cancellingId) {
+              setCancelTarget(null);
+            }
           }}
-          style={styles.modalOverlay}
         >
           <section
             ref={modalRef}
+            className="my-bookings-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="cancel-dialog-title"
             onClick={(event) => event.stopPropagation()}
-            style={styles.modal}
           >
-            <div style={styles.modalHeader}>
-              <div style={styles.modalIcon}>
+            <div className="my-bookings-modal-header">
+              <div className="my-bookings-modal-icon">
                 <AlertTriangle size={24} />
               </div>
 
               <button
                 type="button"
-                onClick={() => setCancelTarget(null)}
+                onClick={() => {
+                  if (!cancellingId) {
+                    setCancelTarget(null);
+                  }
+                }}
                 disabled={Boolean(cancellingId)}
                 aria-label="Close confirmation dialog"
-                style={styles.closeButton}
+                className="my-bookings-modal-close"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <h2 id="cancel-dialog-title" style={styles.modalTitle}>
-              Cancel this booking?
-            </h2>
+            <p className="my-bookings-modal-eyebrow">BOOKING CANCELLATION</p>
 
-            <p style={styles.modalDescription}>
+            <h2 id="cancel-dialog-title">Cancel this booking?</h2>
+
+            <p className="my-bookings-modal-description">
               Are you sure you want to cancel your booking for{" "}
-              <strong style={{ color: "#ffffff" }}>
-                {cancelTarget.title}
-              </strong>
-              ?
+              <strong>{cancelTarget.title}</strong>? This action may not be
+              reversible.
             </p>
 
-            <div style={styles.modalActions}>
+            <div className="my-bookings-modal-actions">
               <button
                 type="button"
                 onClick={() => setCancelTarget(null)}
                 disabled={Boolean(cancellingId)}
-                style={styles.keepButton}
+                className="my-bookings-keep-button"
               >
                 Keep Booking
               </button>
@@ -542,12 +622,19 @@ export default function MyBookingsPage() {
                 type="button"
                 onClick={() => void handleCancelBooking(cancelTarget.id)}
                 disabled={Boolean(cancellingId)}
-                style={{
-                  ...styles.confirmCancelButton,
-                  opacity: cancellingId ? 0.7 : 1,
-                }}
+                className="my-bookings-confirm-cancel"
               >
-                {cancellingId ? "Cancelling..." : "Yes, Cancel"}
+                {cancellingId ? (
+                  <>
+                    <LoaderCircle size={16} className="my-bookings-spinner" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <XCircle size={16} />
+                    Yes, Cancel
+                  </>
+                )}
               </button>
             </div>
           </section>
@@ -556,332 +643,3 @@ export default function MyBookingsPage() {
     </>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#0b0912",
-    color: "#f5f3ff",
-    padding: "56px 20px 90px",
-  },
-  container: {
-    maxWidth: "1100px",
-    margin: "0 auto",
-  },
-  center: {
-    minHeight: "70vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "16px",
-    background: "#0b0912",
-    color: "#f5f3ff",
-    textAlign: "center",
-    padding: "24px",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "20px",
-    marginBottom: "36px",
-  },
-  eyebrow: {
-    color: "#a78bfa",
-    fontSize: "12px",
-    fontWeight: 700,
-    letterSpacing: "2px",
-    marginBottom: "10px",
-  },
-  title: {
-    fontSize: "clamp(30px, 5vw, 42px)",
-    fontWeight: 800,
-    letterSpacing: "-1.5px",
-    margin: 0,
-  },
-  subtitle: {
-    color: "#a8a1b8",
-    marginTop: "10px",
-    fontSize: "15px",
-  },
-  muted: {
-    color: "#a8a1b8",
-    fontSize: "14px",
-    lineHeight: 1.7,
-  },
-  primaryButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#8b5cf6",
-    color: "#ffffff",
-    padding: "12px 20px",
-    borderRadius: "10px",
-    fontWeight: 700,
-    fontSize: "14px",
-    textDecoration: "none",
-    border: "1px solid #a78bfa",
-  },
-  secondaryButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#211a31",
-    color: "#e9ddff",
-    padding: "10px 16px",
-    borderRadius: "9px",
-    fontSize: "13px",
-    fontWeight: 600,
-    textDecoration: "none",
-    border: "1px solid #403456",
-    cursor: "pointer",
-  },
-  cancelButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "7px",
-    background: "#3b1824",
-    color: "#fda4af",
-    padding: "10px 16px",
-    borderRadius: "9px",
-    fontSize: "13px",
-    fontWeight: 600,
-    border: "1px solid #713044",
-    cursor: "pointer",
-  },
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-    gap: "16px",
-    marginBottom: "48px",
-  },
-  statCard: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    background: "#15111f",
-    border: "1px solid #292237",
-    borderRadius: "14px",
-    padding: "22px",
-  },
-  statNumber: {
-    fontSize: "25px",
-    fontWeight: 800,
-    margin: 0,
-  },
-  statLabel: {
-    color: "#a8a1b8",
-    fontSize: "13px",
-    margin: "4px 0 0",
-  },
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    marginBottom: "20px",
-  },
-  sectionTitle: {
-    fontSize: "21px",
-    fontWeight: 700,
-    margin: 0,
-  },
-  count: {
-    color: "#a8a1b8",
-    fontSize: "13px",
-  },
-  emptyCard: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-    gap: "14px",
-    background: "#15111f",
-    border: "1px solid #292237",
-    borderRadius: "16px",
-    padding: "55px 20px",
-  },
-  emptyIcon: {
-    width: "64px",
-    height: "64px",
-    display: "grid",
-    placeItems: "center",
-    background: "#241a39",
-    borderRadius: "50%",
-  },
-  emptyTitle: {
-    fontSize: "21px",
-    fontWeight: 700,
-    margin: 0,
-  },
-  bookingList: {
-    display: "grid",
-    gap: "18px",
-  },
-  bookingCard: {
-    background: "#15111f",
-    border: "1px solid #292237",
-    borderRadius: "15px",
-    padding: "24px",
-  },
-  bookingTop: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: "14px",
-    paddingBottom: "20px",
-    borderBottom: "1px solid #30283e",
-  },
-  bookingTitle: {
-    fontSize: "18px",
-    fontWeight: 700,
-    margin: 0,
-  },
-  bookingId: {
-    color: "#827b91",
-    fontSize: "12px",
-    marginTop: "7px",
-    wordBreak: "break-all",
-  },
-  status: {
-    display: "inline-block",
-    padding: "6px 12px",
-    borderRadius: "20px",
-    fontSize: "11px",
-    fontWeight: 700,
-    textTransform: "capitalize",
-  },
-  detailsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-    gap: "18px",
-    padding: "22px 0",
-  },
-  detail: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    color: "#d2cddd",
-    fontSize: "13px",
-    minWidth: 0,
-    overflowWrap: "anywhere",
-  },
-  bookingBottom: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: "16px",
-    paddingTop: "18px",
-    borderTop: "1px solid #30283e",
-  },
-  actions: {
-    display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "10px",
-  },
-  priceLabel: {
-    color: "#a8a1b8",
-    fontSize: "12px",
-    margin: 0,
-  },
-  price: {
-    color: "#c4b5fd",
-    fontSize: "22px",
-    fontWeight: 800,
-    margin: "5px 0 0",
-  },
-  heading: {
-    fontSize: "24px",
-    fontWeight: 800,
-    margin: 0,
-  },
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 1000,
-    display: "grid",
-    placeItems: "center",
-    padding: "20px",
-    background: "rgba(0,0,0,0.75)",
-    backdropFilter: "blur(7px)",
-  },
-  modal: {
-    width: "100%",
-    maxWidth: "420px",
-    padding: "28px",
-    border: "1px solid #49345e",
-    borderRadius: "20px",
-    background: "#17111f",
-    color: "#ffffff",
-    boxShadow: "0 25px 80px rgba(0,0,0,0.5)",
-  },
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "22px",
-  },
-  modalIcon: {
-    width: "48px",
-    height: "48px",
-    display: "grid",
-    placeItems: "center",
-    borderRadius: "14px",
-    background: "rgba(239,68,68,0.12)",
-    color: "#ff8999",
-  },
-  closeButton: {
-    width: "36px",
-    height: "36px",
-    display: "grid",
-    placeItems: "center",
-    border: "1px solid #40334c",
-    borderRadius: "10px",
-    background: "transparent",
-    color: "#b9adca",
-    cursor: "pointer",
-  },
-  modalTitle: {
-    margin: "0 0 10px",
-    fontSize: "21px",
-    fontWeight: 800,
-  },
-  modalDescription: {
-    margin: "0 0 25px",
-    color: "#b9adca",
-    fontSize: "13px",
-    lineHeight: 1.7,
-  },
-  modalActions: {
-    display: "flex",
-    gap: "12px",
-  },
-  keepButton: {
-    flex: 1,
-    padding: "12px",
-    border: "1px solid #493b57",
-    borderRadius: "10px",
-    background: "#241b2e",
-    color: "#e5d8f6",
-    fontSize: "13px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  confirmCancelButton: {
-    flex: 1,
-    padding: "12px",
-    border: "1px solid #a83f55",
-    borderRadius: "10px",
-    background: "#a8324b",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-};

@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 
 function ArrowIcon() {
@@ -91,7 +92,7 @@ export default function Footer() {
                 rel="noreferrer"
                 aria-label="X"
               >
-                𝕏
+                ð
               </a>
             </div>
           </div>
@@ -116,31 +117,19 @@ export default function Footer() {
           </div>
 
           <div className="footer-newsletter">
-            <h4>Stay in the creative loop.</h4>
-            <p>Get inspiration and updates from the StudioSpace community.</p>
+            <h4>Have a creative space?</h4>
+            <p>
+              Turn your space into someone&apos;s next creative destination.
+              Share it with the StudioSpace community.
+            </p>
 
-            <form
-              className="newsletter-form"
-              onSubmit={(event) => event.preventDefault()}
-            >
-              <label className="sr-only" htmlFor="newsletter-email">
-                Email address
-              </label>
-
-              <input
-                id="newsletter-email"
-                type="email"
-                placeholder="Your email address"
-                required
-              />
-
-              <button type="submit" aria-label="Subscribe">
-                <ArrowIcon />
-              </button>
-            </form>
+            <Link href="/add-studio" className="footer-host-link">
+              List your space
+              <ArrowIcon />
+            </Link>
 
             <span className="newsletter-note">
-              No spam. Just good creative energy.
+              Your next opportunity starts here.
             </span>
           </div>
         </div>

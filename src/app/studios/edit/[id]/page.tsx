@@ -1,6 +1,7 @@
 
 "use client";
 
+import "./edit.css";
 import { Suspense, useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -414,7 +415,7 @@ function EditStudioContent() {
   }
 
   return (
-    <main style={pageStyle}>
+  <main className="edit-studio-page" style={pageStyle}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         <Link href="/my-listings" style={backStyle}>
           <ArrowLeft size={16} />

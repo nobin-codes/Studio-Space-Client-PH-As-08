@@ -1,8 +1,13 @@
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SiteShell from "@/components/site-shell";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
+import "./theme.css";
+import "./motion.css";
+import "./homepage.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,11 +36,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="dark"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SiteShell>{children}</SiteShell>
-        <Toaster position="top-center" richColors />
+        <ThemeProvider>
+          <SiteShell>{children}</SiteShell>
+          <Toaster position="top-center" richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

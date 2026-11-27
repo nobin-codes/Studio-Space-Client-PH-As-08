@@ -1,0 +1,302 @@
+
+/* =========================================================
+   STUDIOSPACE MOTION SYSTEM
+   Premium animations for the existing homepage.
+========================================================= */
+
+@keyframes studio-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes studio-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes studio-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes studio-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(197, 244, 119, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 34px rgba(197, 244, 119, 0.13);
+  }
+}
+
+@keyframes studio-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+
+  to {
+    background-position: -150% 0;
+  }
+}
+
+/* Homepage entrance */
+
+.studio-home .hero-section {
+  animation: studio-fade-in 900ms ease both;
+}
+
+.studio-home .hero-section .hero-content {
+  animation: studio-fade-up 850ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.studio-home .hero-section .hero-swiper {
+  animation: studio-fade-in 1100ms 180ms ease both;
+}
+
+/* Section entrance */
+
+.studio-home .section-heading {
+  animation: studio-fade-up 700ms ease both;
+}
+
+.studio-home .featured-section,
+.studio-home .categories-section,
+.studio-home .process-section,
+.studio-home .host-section,
+.studio-home .assurance-section,
+.studio-home .final-cta {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Studio cards */
+
+.studio-home .studio-card {
+  transform: translateY(0);
+  transition:
+    transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 300ms ease,
+    box-shadow 400ms ease;
+  will-change: transform;
+}
+
+.studio-home .studio-card:hover {
+  transform: translateY(-8px);
+}
+
+.studio-home .studio-card-image {
+  overflow: hidden;
+}
+
+.studio-home .studio-card-image img {
+  transition:
+    transform 800ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 500ms ease;
+}
+
+.studio-home .studio-card:hover .studio-card-image img {
+  transform: scale(1.065);
+}
+
+/* Category cards */
+
+.studio-home .category-card {
+  transition:
+    transform 350ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    background-color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 350ms ease;
+}
+
+.studio-home .category-card:hover {
+  transform: translateY(-7px);
+}
+
+.studio-home .category-icon {
+  transition:
+    transform 400ms ease,
+    color 300ms ease;
+}
+
+.studio-home .category-card:hover .category-icon {
+  transform: scale(1.12) rotate(-5deg);
+}
+
+/* Process cards */
+
+.studio-home .process-card {
+  transition:
+    transform 350ms ease,
+    opacity 350ms ease;
+}
+
+.studio-home .process-card:hover {
+  transform: translateY(-5px);
+}
+
+.studio-home .process-icon {
+  transition:
+    transform 350ms ease,
+    background-color 350ms ease;
+}
+
+.studio-home .process-card:hover .process-icon {
+  transform: rotate(-7deg) scale(1.08);
+}
+
+/* Assurance cards */
+
+.studio-home .assurance-card {
+  transition:
+    transform 350ms ease,
+    border-color 350ms ease,
+    box-shadow 350ms ease,
+    background-color 350ms ease;
+}
+
+.studio-home .assurance-card:hover {
+  transform: translateY(-6px);
+}
+
+.studio-home .assurance-icon {
+  transition: transform 350ms ease;
+}
+
+.studio-home .assurance-card:hover .assurance-icon {
+  transform: scale(1.1) rotate(-6deg);
+}
+
+/* Host and final call-to-action */
+
+.studio-home .host-section,
+.studio-home .final-cta {
+  overflow: hidden;
+}
+
+.studio-home .host-section::after,
+.studio-home .final-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.045) 48%,
+    transparent 72%
+  );
+  background-size: 220% 100%;
+  background-position: 150% 0;
+  transition: background-position 1.2s ease;
+}
+
+.studio-home .host-section:hover::after,
+.studio-home .final-cta:hover::after {
+  background-position: -150% 0;
+}
+
+/* Buttons */
+
+.studio-home .button {
+  transition:
+    transform 250ms ease,
+    box-shadow 300ms ease,
+    background-color 300ms ease,
+    color 300ms ease;
+}
+
+.studio-home .button:hover {
+  transform: translateY(-3px);
+}
+
+.studio-home .button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Navigation */
+
+.site-header .brand-icon {
+  transition:
+    transform 400ms ease,
+    color 300ms ease;
+}
+
+.site-header .brand:hover .brand-icon {
+  transform: rotate(-9deg) scale(1.08);
+}
+
+/* Theme toggle */
+
+.theme-toggle {
+  transition:
+    transform 250ms ease,
+    background-color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+}
+
+/* Loading skeleton */
+
+.studio-skeleton .skeleton-image,
+.studio-skeleton .skeleton-line {
+  background-size: 200% 100%;
+  animation: studio-shimmer 1.8s linear infinite;
+}
+
+/* Focus accessibility */
+
+.studio-home a:focus-visible,
+.studio-home button:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 4px;
+}
+
+/* Mobile motion adjustments */
+
+@media (max-width: 760px) {
+  .studio-home .studio-card:hover,
+  .studio-home .category-card:hover,
+  .studio-home .process-card:hover,
+  .studio-home .assurance-card:hover {
+    transform: none;
+  }
+
+  .studio-home .studio-card:hover .studio-card-image img {
+    transform: none;
+  }
+}
+
+/* Respect reduced-motion preferences */
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-home *,
+  .site-header *,
+  .theme-toggle {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
